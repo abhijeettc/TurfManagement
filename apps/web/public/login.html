@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign in · TurfSync</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{color-scheme:light dark}
+html,body{margin:0}
+[hidden]{display:none!important}
+
+:root{
+  --paper:#EDF0EC; --surface:#FFFFFF; --surface-2:#F4F6F3;
+  --ink:#10160F; --ink-2:#39443A; --muted:#6B776D;
+  --line:#DCE2DA; --line-strong:#C3CCC0;
+  --brand:#14563C; --on-brand:#F4F8F4; --brand-soft:#E2EDE6;
+  --crit:#B93327; --crit-soft:#FBE8E5;
+  --shadow:0 2px 4px rgba(16,22,15,.05), 0 18px 40px -24px rgba(16,22,15,.4);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0B100D; --surface:#141B16; --surface-2:#1A231D;
+    --ink:#E9EEE8; --ink-2:#B6C1B7; --muted:#8B978C;
+    --line:#26312A; --line-strong:#3A483C;
+    --brand:#5FBE8E; --on-brand:#08120C; --brand-soft:#15291F;
+    --crit:#E8776B; --crit-soft:#2B1817;
+    --shadow:0 2px 4px rgba(0,0,0,.4), 0 18px 40px -24px rgba(0,0,0,.9);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0B100D; --surface:#141B16; --surface-2:#1A231D;
+  --ink:#E9EEE8; --ink-2:#B6C1B7; --muted:#8B978C;
+  --line:#26312A; --line-strong:#3A483C;
+  --brand:#5FBE8E; --on-brand:#08120C; --brand-soft:#15291F;
+  --crit:#E8776B; --crit-soft:#2B1817;
+  --shadow:0 2px 4px rgba(0,0,0,.4), 0 18px 40px -24px rgba(0,0,0,.9);
+}
+
+*{box-sizing:border-box}
+body{
+  background:var(--paper); color:var(--ink); margin:0; min-height:100vh;
+  font-family:"Barlow","Segoe UI",system-ui,sans-serif; font-size:15px; line-height:1.5;
+  display:grid; place-items:center; padding:24px;
+  -webkit-font-smoothing:antialiased;
+}
+:focus-visible{outline:2px solid var(--brand); outline-offset:2px; border-radius:4px}
+
+.card{
+  width:100%; max-width:400px; background:var(--surface);
+  border:1px solid var(--line); border-radius:8px; box-shadow:var(--shadow);
+  overflow:hidden;
+}
+.head{padding:26px 28px 22px; border-bottom:1px solid var(--line)}
+.mark{
+  display:inline-flex; align-items:center; gap:9px; margin-bottom:16px;
+}
+.mark i{
+  width:30px; height:30px; border-radius:6px; background:var(--brand); color:var(--on-brand);
+  display:grid; place-items:center; font-family:"Barlow Condensed",sans-serif;
+  font-weight:700; font-size:16px; font-style:normal; letter-spacing:-.02em;
+}
+.mark b{font-family:"Barlow Condensed",sans-serif; font-weight:700; font-size:20px; letter-spacing:.01em}
+h1{font-family:"Barlow Condensed",sans-serif; font-weight:600; font-size:26px; margin:0 0 4px; line-height:1.1}
+.head p{margin:0; color:var(--muted); font-size:14px}
+
+form{padding:22px 28px 24px; display:grid; gap:14px}
+label{display:grid; gap:5px}
+label span{
+  font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.11em;
+  text-transform:uppercase; color:var(--muted);
+}
+input{
+  font:inherit; color:var(--ink); background:var(--surface-2);
+  border:1px solid var(--line-strong); border-radius:5px; padding:10px 12px;
+}
+input:focus{outline:none; border-color:var(--brand); box-shadow:0 0 0 3px var(--brand-soft)}
+
+button{
+  font:inherit; font-weight:600; cursor:pointer; padding:11px 14px; border-radius:5px;
+  border:1px solid transparent; background:var(--brand); color:var(--on-brand);
+  margin-top:4px;
+}
+button:hover{filter:brightness(1.08)}
+button[disabled]{opacity:.6; cursor:progress}
+
+.error{
+  background:var(--crit-soft); color:var(--crit); border-radius:5px;
+  padding:9px 12px; font-size:13.5px; border:1px solid var(--crit);
+}
+
+.alt{
+  padding:14px 28px 18px; border-top:1px solid var(--line); background:var(--surface-2);
+  font-size:13.5px; color:var(--muted); text-align:center;
+}
+.alt a{color:var(--brand); font-weight:600; text-decoration:none; cursor:pointer}
+.alt a:hover{text-decoration:underline}
+
+.demo{
+  margin-top:14px; border-top:1px dashed var(--line-strong); padding-top:12px;
+  font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--muted);
+  text-align:left; line-height:1.7;
+}
+.demo b{color:var(--ink-2); font-weight:500}
+.demo button{
+  all:unset; cursor:pointer; color:var(--brand); font-weight:600;
+  font-family:"IBM Plex Mono",monospace; font-size:11px;
+}
+.demo button:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="head">
+    <div class="mark"><i>TS</i><b>TurfSync</b></div>
+    <h1 id="title">Sign in</h1>
+    <p id="subtitle">One calendar for every app your turf is listed on.</p>
+  </div>
+
+  <form id="form">
+    <div class="error" id="error" hidden></div>
+
+    <div id="signupFields" hidden>
+      <label style="margin-bottom:14px">
+        <span>Your name</span>
+        <input type="text" id="name" autocomplete="name">
+      </label>
+      <label style="margin-bottom:14px">
+        <span>Your WhatsApp number</span>
+        <input type="tel" id="phone" autocomplete="tel" placeholder="98123 45678">
+      </label>
+      <label style="margin-bottom:14px">
+        <span>Venue name</span>
+        <input type="text" id="venueName" placeholder="Kickoff Arena">
+      </label>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px">
+        <label><span>Locality</span><input type="text" id="locality" placeholder="Bopal"></label>
+        <label><span>City</span><input type="text" id="city" placeholder="Ahmedabad"></label>
+      </div>
+    </div>
+
+    <label>
+      <span>Email</span>
+      <input type="email" id="email" autocomplete="username" required>
+    </label>
+
+    <label>
+      <span>Password</span>
+      <input type="password" id="password" autocomplete="current-password" required minlength="8">
+    </label>
+
+    <button type="submit" id="submit">Sign in</button>
+  </form>
+
+  <div class="alt">
+    <span id="altText">New here?</span>
+    <a id="toggle">Create an account</a>
+  </div>
+</div>
+
+<script src="/login.js"></script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "name": "@turfsync/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/pool.js"
+  },
+  "dependencies": {
+    "@turfsync/core": "*",
+    "pg": "^8.13.1"
+  }
+}

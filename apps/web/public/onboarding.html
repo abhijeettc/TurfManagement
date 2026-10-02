@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Set up your venue · TurfSync</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{color-scheme:light dark}
+html,body{margin:0}
+[hidden]{display:none!important}
+:root{
+  --paper:#EDF0EC; --surface:#FFFFFF; --surface-2:#F4F6F3;
+  --ink:#10160F; --ink-2:#39443A; --muted:#6B776D;
+  --line:#DCE2DA; --line-strong:#C3CCC0;
+  --brand:#14563C; --on-brand:#F4F8F4; --brand-soft:#E2EDE6;
+  --crit:#B93327; --crit-soft:#FBE8E5; --warn:#A9700F; --warn-soft:#FAF0DC;
+  --playo:#1A63A8; --khelo:#0E8F63; --hudle:#CB69A6; --district:#C2410C;
+  --shadow:0 2px 4px rgba(16,22,15,.05), 0 18px 40px -24px rgba(16,22,15,.35);
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#0B100D; --surface:#141B16; --surface-2:#1A231D;
+  --ink:#E9EEE8; --ink-2:#B6C1B7; --muted:#8B978C;
+  --line:#26312A; --line-strong:#3A483C;
+  --brand:#5FBE8E; --on-brand:#08120C; --brand-soft:#15291F;
+  --crit:#E8776B; --crit-soft:#2B1817; --warn:#D9A040; --warn-soft:#282013;
+  --playo:#2B6AB0; --khelo:#1C9C72; --hudle:#C86FA9; --district:#DE6E2D;
+  --shadow:0 2px 4px rgba(0,0,0,.4), 0 18px 40px -24px rgba(0,0,0,.85);
+}}
+:root[data-theme="dark"]{
+  --paper:#0B100D; --surface:#141B16; --surface-2:#1A231D;
+  --ink:#E9EEE8; --ink-2:#B6C1B7; --muted:#8B978C;
+  --line:#26312A; --line-strong:#3A483C;
+  --brand:#5FBE8E; --on-brand:#08120C; --brand-soft:#15291F;
+  --crit:#E8776B; --crit-soft:#2B1817; --warn:#D9A040; --warn-soft:#282013;
+  --playo:#2B6AB0; --khelo:#1C9C72; --hudle:#C86FA9; --district:#DE6E2D;
+  --shadow:0 2px 4px rgba(0,0,0,.4), 0 18px 40px -24px rgba(0,0,0,.85);
+}
+*{box-sizing:border-box}
+body{
+  background:var(--paper); color:var(--ink); margin:0;
+  font-family:"Barlow","Segoe UI",system-ui,sans-serif; font-size:15px; line-height:1.5;
+  padding:32px 20px 60px; -webkit-font-smoothing:antialiased;
+}
+:focus-visible{outline:2px solid var(--brand); outline-offset:2px; border-radius:4px}
+.wrap{max-width:720px; margin:0 auto}
+
+.mark{display:inline-flex; align-items:center; gap:9px; margin-bottom:20px}
+.mark i{width:28px; height:28px; border-radius:6px; background:var(--brand); color:var(--on-brand);
+  display:grid; place-items:center; font-family:"Barlow Condensed",sans-serif; font-weight:700;
+  font-size:15px; font-style:normal}
+.mark b{font-family:"Barlow Condensed",sans-serif; font-weight:700; font-size:19px}
+
+h1{font-family:"Barlow Condensed",sans-serif; font-weight:700; font-size:34px; margin:0 0 6px; line-height:1.05}
+.sub{color:var(--muted); margin:0 0 26px; max-width:60ch}
+
+.steps{display:flex; gap:8px; margin-bottom:26px; flex-wrap:wrap}
+.step{
+  display:flex; align-items:center; gap:8px; font-size:13.5px; color:var(--muted);
+  padding:6px 12px 6px 8px; border:1px solid var(--line); border-radius:20px; background:var(--surface);
+}
+.step i{width:20px; height:20px; border-radius:50%; background:var(--surface-2); color:var(--muted);
+  display:grid; place-items:center; font-family:"IBM Plex Mono",monospace; font-size:11px; font-style:normal}
+.step.on{border-color:var(--brand); color:var(--ink)}
+.step.on i{background:var(--brand); color:var(--on-brand)}
+.step.done i{background:var(--brand-soft); color:var(--brand)}
+
+.panel{background:var(--surface); border:1px solid var(--line); border-radius:8px;
+  box-shadow:var(--shadow); overflow:hidden; margin-bottom:16px}
+.panel-h{padding:15px 20px 14px; border-bottom:1px solid var(--line)}
+.panel-h h2{font-family:"Barlow Condensed",sans-serif; font-weight:700; font-size:21px; margin:0}
+.panel-h p{margin:3px 0 0; font-size:13.5px; color:var(--muted)}
+.panel-b{padding:18px 20px 20px}
+
+label{display:grid; gap:5px; margin-bottom:14px}
+label span{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.11em;
+  text-transform:uppercase; color:var(--muted)}
+input{font:inherit; color:var(--ink); background:var(--surface-2);
+  border:1px solid var(--line-strong); border-radius:5px; padding:9px 11px; width:100%}
+input:focus{outline:none; border-color:var(--brand); box-shadow:0 0 0 3px var(--brand-soft)}
+
+.row2{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+button{font:inherit; font-weight:600; cursor:pointer; padding:10px 16px; border-radius:5px;
+  border:1px solid transparent; background:var(--brand); color:var(--on-brand)}
+button:hover{filter:brightness(1.08)}
+button.ghost{background:none; border-color:var(--line-strong); color:var(--ink-2)}
+button.ghost:hover{background:var(--surface-2); filter:none}
+button[disabled]{opacity:.55; cursor:not-allowed}
+
+.courts{display:grid; gap:1px; background:var(--line); border:1px solid var(--line);
+  border-radius:6px; overflow:hidden; margin-bottom:16px}
+.courts .empty{background:var(--surface); padding:22px; text-align:center; color:var(--muted); font-size:13.5px}
+.courtrow{background:var(--surface); padding:13px 16px; display:flex; align-items:center; gap:12px}
+.courtrow b{font-family:"Barlow Condensed",sans-serif; font-weight:600; font-size:18px}
+.courtrow span{color:var(--muted); font-size:13px}
+.courtrow .rm{margin-left:auto; background:none; border:none; color:var(--muted); cursor:pointer;
+  font-size:18px; padding:2px 7px; border-radius:4px; font-weight:400}
+.courtrow .rm:hover{background:var(--crit-soft); color:var(--crit)}
+
+.mapcourt{border-bottom:1px solid var(--line); padding:16px 20px}
+.mapcourt:last-child{border-bottom:none}
+.mapcourt h3{font-family:"Barlow Condensed",sans-serif; font-weight:600; font-size:18px; margin:0 0 2px}
+.mapcourt p{margin:0 0 12px; font-size:12.5px; color:var(--muted)}
+.mapgrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:10px}
+.mapgrid label{margin:0}
+.mapgrid label span{display:flex; align-items:center; gap:6px}
+.mapgrid label span i{width:8px; height:8px; border-radius:2px; display:block}
+
+.note{background:var(--warn-soft); border:1px solid var(--warn); color:var(--warn);
+  border-radius:5px; padding:11px 13px; font-size:13px; margin-bottom:16px}
+.error{background:var(--crit-soft); color:var(--crit); border:1px solid var(--crit);
+  border-radius:5px; padding:9px 12px; font-size:13.5px; margin-bottom:14px}
+.actions{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+.actions .spacer{flex:1}
+.skip{color:var(--muted); font-size:13.5px; cursor:pointer; text-decoration:underline;
+  background:none; border:none; font-weight:400; padding:10px 4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="mark"><i>TS</i><b>TurfSync</b></div>
+  <h1>Set up <span id="venueName">your venue</span></h1>
+  <p class="sub">Two steps. Add your courts, then tell us what each app calls them &mdash; that mapping is what lets a booking on one platform block the right pitch everywhere else.</p>
+
+  <div class="steps">
+    <div class="step on" id="s1"><i>1</i>Courts</div>
+    <div class="step" id="s2"><i>2</i>What each app calls them</div>
+    <div class="step" id="s3"><i>3</i>Done</div>
+  </div>
+
+  <div class="error" id="error" hidden></div>
+
+  <section id="step1">
+    <div class="courts" id="courtList"></div>
+    <div class="panel">
+      <div class="panel-h">
+        <h2>Add a court</h2>
+        <p>One row per physical pitch. If two pickleball courts are always booked together, that is one court here.</p>
+      </div>
+      <div class="panel-b">
+        <div class="row2">
+          <label><span>Name</span><input id="courtName" placeholder="Court 1"></label>
+          <label><span>Sport</span><input id="courtSport" placeholder="Box cricket &middot; 5-a-side"></label>
+        </div>
+        <div class="actions">
+          <button id="addCourt">Add court</button>
+          <span class="spacer"></span>
+          <button class="ghost" id="toStep2" disabled>Next: map the apps</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="step2" hidden>
+    <div class="note">
+      Type the name <b>exactly</b> as each app shows it &mdash; "Turf A", not "Court 1". This is how a Playo booking finds the right pitch. Leave blank if you are not listed there.
+    </div>
+    <div class="panel" id="mapPanel"></div>
+    <div class="actions">
+      <button class="ghost" id="backTo1">Back</button>
+      <span class="spacer"></span>
+      <button class="skip" id="skipMapping">Do this later</button>
+      <button id="finish">Finish setup</button>
+    </div>
+  </section>
+</div>
+<script src="/onboarding.js"></script>
+</body>
+</html>

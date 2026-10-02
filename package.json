@@ -1,0 +1,45 @@
+{
+  "name": "turfsync",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Channel manager for Indian sports turf venues. Phase 1: read-only unified board.",
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "db:up": "docker compose up -d && node packages/db/src/wait.js",
+    "db:down": "docker compose down",
+    "db:reset": "docker compose down -v && npm run db:up && npm run migrate && npm run seed",
+    "migrate": "node packages/db/src/migrate.js",
+    "seed": "node packages/db/src/seed.js",
+    "dev": "node apps/api/src/server.js",
+    "start": "node apps/api/src/server.js",
+    "worker": "node apps/api/src/worker-entry.js",
+    "worker:mock": "cross-env BLOCKING_MOCK=1 node apps/api/src/worker-entry.js",
+    "test": "node --env-file-if-exists=.env.test --test \"test/*.test.js\"",
+    "simulate": "node tools/simulate.js",
+    "capture": "node tools/capture.js",
+    "recon": "node tools/recon.js",
+    "interview": "node tools/interview.js",
+    "gate": "node tools/gate.js",
+    "setup": "npm run db:up && npm run migrate && npm run seed"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.71.0",
+    "@fastify/cookie": "^11.1.2",
+    "@fastify/static": "^10.1.3",
+    "@fastify/websocket": "^11.0.2",
+    "bullmq": "^5.81.4",
+    "fastify": "^5.2.1",
+    "ioredis": "^5.11.1",
+    "pg": "^8.13.1"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3"
+  }
+}

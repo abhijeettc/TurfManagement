@@ -1,0 +1,13 @@
+{
+  "name": "@turfsync/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.js",
+    "./canonical.js": "./src/canonical.js",
+    "./time.js": "./src/time.js",
+    "./money.js": "./src/money.js",
+    "./dedupe.js": "./src/dedupe.js"
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "_comment": [
+    "INVENTED PAYLOADS — NOT CAPTURED FROM ANY REAL DEVICE.",
+    "",
+    "Only Playo cases remain. The KheloMore, Hudle and District cases were",
+    "deleted on 27 Sep 2026 when real payloads for those three arrived and",
+    "proved the invented formats wrong in every field that mattered — booking",
+    "id shape, amount format, even the transport (WhatsApp, not app push).",
+    "Keeping known-wrong fiction alongside the truth would only mislead.",
+    "",
+    "The Playo cases below are still guesses. Playo reportedly notifies by",
+    "email; that payload has not been captured yet. Treat them as scaffolding",
+    "for the date/time scanning, not as evidence about Playo.",
+    "",
+    "Real payloads live in real.json. Add them with: node tools/capture.js"
+  ],
+  "cases": [
+    {
+      "id": "playo-notification-evening",
+      "channel": "notification",
+      "raw": "New Booking Confirmed\nTurf A · Sat, 02 Sep\n07:00 PM - 08:00 PM\nRohit Menon · 9912345651\nBooking ID: PLY-4471902",
+      "expect": {
+        "platform": "playo",
+        "externalBookingId": "PLY-4471902",
+        "courtLabel": "Turf A",
+        "date": "2026-09-02",
+        "startHhmm": "19:00",
+        "endHhmm": "20:00",
+        "customerName": "Rohit Menon",
+        "grossPaise": null
+      }
+    },
+    {
+      "id": "playo-notification-crosses-midnight",
+      "channel": "notification",
+      "raw": "New Booking Confirmed\nTurf A · Wed, 02 Sep\n11:30 PM - 01:00 AM\nNikhil Bose · 9712345512\nBooking ID: PLY-4472880",
+      "expect": {
+        "platform": "playo",
+        "externalBookingId": "PLY-4472880",
+        "courtLabel": "Turf A",
+        "date": "2026-09-02",
+        "startHhmm": "23:30",
+        "endHhmm": "01:00"
+      }
+    },
+    {
+      "id": "playo-notification-court-name-with-punctuation",
+      "channel": "notification",
+      "raw": "New Booking Confirmed\nPickle 1 + 2 · Wed, 02 Sep\n11:30 PM - 12:30 AM\nMeena Iyer · 9812349999\nBooking ID: PLY-5551234",
+      "expect": {
+        "platform": "playo",
+        "courtLabel": "Pickle 1 + 2",
+        "customerName": "Meena Iyer",
+        "date": "2026-09-02",
+        "startHhmm": "23:30",
+        "endHhmm": "00:30"
+      }
+    },
+    {
+      "id": "playo-email-with-money",
+      "channel": "email",
+      "raw": "Playo Partner — Booking Confirmation\nVenue: Kickoff Arena\nCourt: Turf A\nDate: 02 Sep 2026\nSlot: 07:00 PM - 08:00 PM\nCustomer: Rohit Menon (9912345651)\nBooking Amount: Rs. 1,100.00\nPlayo Commission (14%): Rs. 154.00\nPayout: Rs. 946.00",
+      "expect": {
+        "platform": "playo",
+        "externalBookingId": null,
+        "courtLabel": "Turf A",
+        "date": "2026-09-02",
+        "startHhmm": "19:00",
+        "endHhmm": "20:00",
+        "grossPaise": 110000,
+        "commissionPaise": 15400
+      }
+    },
+    {
+      "id": "playo-cancellation",
+      "channel": "notification",
+      "raw": "Booking Cancelled\nTurf B · Sat, 02 Sep\n09:00 PM - 10:00 PM\nHarpreet Gill · 9812345289\nBooking ID: PLY-4471455",
+      "expect": {
+        "platform": "playo",
+        "externalBookingId": "PLY-4471455",
+        "courtLabel": "Turf B",
+        "cancelled": true
+      }
+    }
+  ]
+}

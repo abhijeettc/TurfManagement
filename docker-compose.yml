@@ -1,0 +1,37 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: turfsync-db
+    environment:
+      POSTGRES_USER: turfsync
+      POSTGRES_PASSWORD: turfsync
+      POSTGRES_DB: turfsync
+    ports:
+      - "5434:5432"
+    volumes:
+      - turfsync-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U turfsync -d turfsync"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  redis:
+    image: redis:7-alpine
+    container_name: turfsync-redis
+    # Host port 6380, not the default 6379 — this machine already runs another
+    # project's Redis on 6379 (the same reason Postgres is on 5434, not 5432
+    # or the neighbouring project's 5433).
+    ports:
+      - "6380:6379"
+    volumes:
+      - turfsync-redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+volumes:
+  turfsync-pgdata:
+  turfsync-redisdata:

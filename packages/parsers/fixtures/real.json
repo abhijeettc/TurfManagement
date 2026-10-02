@@ -1,0 +1,77 @@
+{
+  "_comment": [
+    "REAL PAYLOADS — captured from the owner of Pickle & Pitch Club,",
+    "Hinjewadi Phase 2, Pune, on 27 Sep 2026.",
+    "",
+    "KEY FINDING: KheloMore, District and Hudle do NOT fire partner-app push",
+    "notifications. They send WhatsApp Business messages to the owner. The",
+    "Android listener therefore sees them under package com.whatsapp, with the",
+    "sender name as the notification title and the message as the body — which",
+    "is why channel is \"notification\" here even though the transport is WhatsApp.",
+    "",
+    "Playo is reported to notify by email instead; that payload is not captured yet.",
+    "",
+    "expect{} is intentionally near-empty: no current template reads these. Fill",
+    "each one in by hand from the raw text, then make the template match it.",
+    "Corpus first, template second."
+  ],
+  "cases": [
+    {
+      "id": "khelomore-notification-01",
+      "channel": "notification",
+      "platform": "khelomore",
+      "capturedAt": "2026-09-27",
+      "note": "real capture · Pickle & Pitch Club, Hinjewadi Phase 2 · WhatsApp · 27 Sep 2026",
+      "raw": "KheloMore\nNew Booking Alert\nA new booking has been received at Pickle And Pitch Club.\n👤 Customer: Rohan Desai\n📅 Game Day: 27 Sep '26\n⏰ Slot: 07:00 PM - 08:00 PM\n🏓 Property: Synthetic Ball\n💰 Amount Paid: 637.0\nReview booking details here: http://rml.fm/tG1xgp. Prepare accordingly!\nTeam KheloMore",
+      "expect": {
+        "platform": "khelomore",
+        "externalBookingId": null,
+        "courtLabel": "Synthetic Ball",
+        "date": "2026-09-27",
+        "startHhmm": "19:00",
+        "endHhmm": "20:00",
+        "customerName": "Rohan Desai",
+        "grossPaise": 63700,
+        "commissionPaise": null
+      }
+    },
+    {
+      "id": "district-notification-02",
+      "channel": "notification",
+      "platform": "district",
+      "capturedAt": "2026-09-27",
+      "note": "real capture · Pickle & Pitch Club, Hinjewadi Phase 2 · WhatsApp · 27 Sep 2026",
+      "raw": "district\nHi! You have a new booking for your venue 🎉\n\nPriya Nair is scheduled to play Cricket Nets at Pickle & Pitch Club - Pitch 1|Synthetic Ball Cricket Bowling Machine (Practice net) on 27 Sep 2026 10:30 AM - 11:30 AM.\n\nBooking ID: MM8LPS\n\nOpen the District Play Partner app for full details.",
+      "expect": {
+        "platform": "district",
+        "externalBookingId": "MM8LPS",
+        "courtLabel": "Pitch 1|Synthetic Ball Cricket Bowling Machine (Practice net)",
+        "date": "2026-09-27",
+        "startHhmm": "10:30",
+        "endHhmm": "11:30",
+        "customerName": "Priya Nair",
+        "grossPaise": null,
+        "commissionPaise": null
+      }
+    },
+    {
+      "id": "hudle-notification-03",
+      "channel": "notification",
+      "platform": "hudle",
+      "capturedAt": "2026-09-27",
+      "note": "real capture · Pickle & Pitch Club, Hinjewadi Phase 2 · WhatsApp · 27 Sep 2026",
+      "raw": "Hudle\nHi Pickle And Pitch Club, new booking for your venue. 🎉\n\nImran Qadri is scheduled to play Cricket Nets (Cricket Bowling Ma...) at Pickle and Pitch Club | Hinjewadi Phase 2 on Sep 25, 2026 10:00 PM - 10:30 PM.\n\nBooking ID: HUD3785535674\n\nOpen the Hudle Partner app for full details.",
+      "expect": {
+        "platform": "hudle",
+        "externalBookingId": "HUD3785535674",
+        "courtLabel": "Cricket Bowling Ma...",
+        "date": "2026-09-25",
+        "startHhmm": "22:00",
+        "endHhmm": "22:30",
+        "customerName": "Imran Qadri",
+        "grossPaise": null,
+        "commissionPaise": null
+      }
+    }
+  ]
+}

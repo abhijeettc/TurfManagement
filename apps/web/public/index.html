@@ -1,0 +1,736 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TurfSync Operations Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Reset matching the prototype's host environment. */
+:root{color-scheme:light dark}
+html,body{margin:0}
+img{max-width:100%}
+[hidden]{display:none!important}
+
+:root{
+  --paper:#EDF0EC; --surface:#FFFFFF; --surface-2:#F4F6F3; --surface-3:#E4E9E2;
+  --ink:#10160F; --ink-2:#39443A; --muted:#6B776D; --faint:#96A198;
+  --line:#DCE2DA; --line-strong:#C3CCC0;
+  --brand:#14563C; --brand-soft:#E2EDE6; --on-brand:#F4F8F4;
+  --amber:#C97A06; --amber-line:#E8930C; --amber-soft:#FBF1DD; --on-amber:#241703;
+  --ok:#2F7A52; --warn:#A9700F; --crit:#B93327;
+  --ok-soft:#E6F1EA; --warn-soft:#FAF0DC; --crit-soft:#FBE8E5;
+  /* categorical — validated all-pairs, light surface */
+  --playo:#1A63A8; --khelo:#0E8F63; --hudle:#CB69A6; --district:#C2410C; --turfpro:#6D3FC7; --turfpro-soft:#EEE8F9;
+  --playo-soft:#E5EDF6; --khelo-soft:#E1F0EA; --hudle-soft:#F9EBF3; --district-soft:#F9E9E2;
+  --direct:#39443A; --direct-soft:#EAEEE8;
+  --bar:#A8C9B7;
+  --shadow-sm:0 1px 2px rgba(16,22,15,.06);
+  --shadow:0 2px 4px rgba(16,22,15,.05), 0 12px 28px -18px rgba(16,22,15,.35);
+  --col:36px; --rowh:74px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0B100D; --surface:#141B16; --surface-2:#1A231D; --surface-3:#222D25;
+    --ink:#E9EEE8; --ink-2:#B6C1B7; --muted:#8B978C; --faint:#6C7A6E;
+    --line:#26312A; --line-strong:#3A483C;
+    --brand:#5FBE8E; --brand-soft:#15291F; --on-brand:#08120C;
+    --amber:#E6A23C; --amber-line:#F0A93A; --amber-soft:#2A2013; --on-amber:#171004;
+    --ok:#5FBE8E; --warn:#D9A040; --crit:#E8776B;
+    --ok-soft:#13251B; --warn-soft:#282013; --crit-soft:#2B1817;
+    /* categorical — validated all-pairs, dark surface #141B16 */
+    --playo:#2B6AB0; --khelo:#1C9C72; --hudle:#C86FA9; --district:#DE6E2D; --turfpro:#9B7BE0; --turfpro-soft:#211A33;
+    --playo-soft:#162330; --khelo-soft:#0F241B; --hudle-soft:#2A1A24; --district-soft:#2A1B12;
+    --direct:#B6C1B7; --direct-soft:#1E271F;
+    --bar:#2E5442;
+    --shadow-sm:0 1px 2px rgba(0,0,0,.45);
+    --shadow:0 2px 4px rgba(0,0,0,.4), 0 12px 28px -18px rgba(0,0,0,.85);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0B100D; --surface:#141B16; --surface-2:#1A231D; --surface-3:#222D25;
+  --ink:#E9EEE8; --ink-2:#B6C1B7; --muted:#8B978C; --faint:#6C7A6E;
+  --line:#26312A; --line-strong:#3A483C;
+  --brand:#5FBE8E; --brand-soft:#15291F; --on-brand:#08120C;
+  --amber:#E6A23C; --amber-line:#F0A93A; --amber-soft:#2A2013; --on-amber:#171004;
+  --ok:#5FBE8E; --warn:#D9A040; --crit:#E8776B;
+  --ok-soft:#13251B; --warn-soft:#282013; --crit-soft:#2B1817;
+  --playo:#2B6AB0; --khelo:#1C9C72; --hudle:#C86FA9; --district:#DE6E2D; --turfpro:#9B7BE0; --turfpro-soft:#211A33;
+  --playo-soft:#162330; --khelo-soft:#0F241B; --hudle-soft:#2A1A24; --district-soft:#2A1B12;
+  --direct:#B6C1B7; --direct-soft:#1E271F;
+  --bar:#2E5442;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.45);
+  --shadow:0 2px 4px rgba(0,0,0,.4), 0 12px 28px -18px rgba(0,0,0,.85);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:"Barlow","Segoe UI",system-ui,sans-serif; font-size:14px; line-height:1.45;
+  -webkit-font-smoothing:antialiased;
+}
+button{font:inherit; color:inherit; background:none; border:none; cursor:pointer}
+:focus-visible{outline:2px solid var(--amber-line); outline-offset:2px; border-radius:3px}
+.mono{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums}
+.cond{font-family:"Barlow Condensed",sans-serif}
+.lbl{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.11em; text-transform:uppercase; color:var(--muted)}
+
+/* ============ shell ============ */
+.app{display:grid; grid-template-columns:60px minmax(0,1fr); min-height:100vh}
+
+.rail{
+  background:var(--brand); display:flex; flex-direction:column; align-items:center;
+  gap:4px; padding:12px 0; position:sticky; top:0; height:100vh;
+}
+.rail-mark{
+  width:34px; height:34px; border-radius:7px; background:var(--on-brand); color:var(--brand);
+  display:grid; place-items:center; font-family:"Barlow Condensed",sans-serif;
+  font-weight:700; font-size:19px; margin-bottom:12px; letter-spacing:-.02em;
+}
+.rail-btn{
+  width:44px; padding:8px 0 6px; border-radius:7px; color:var(--on-brand);
+  display:flex; flex-direction:column; align-items:center; gap:3px; opacity:.62;
+  transition:opacity .13s, background .13s; position:relative;
+}
+.rail-btn:hover{opacity:.92; background:rgba(255,255,255,.09)}
+:root[data-theme="dark"] .rail-btn:hover, :root:not([data-theme="light"]) .rail-btn:hover{background:rgba(0,0,0,.18)}
+.rail-btn[aria-selected="true"]{opacity:1; background:rgba(255,255,255,.16)}
+:root[data-theme="dark"] .rail-btn[aria-selected="true"]{background:rgba(0,0,0,.28)}
+.rail-btn svg{width:19px; height:19px; display:block}
+.rail-btn span{font-family:"IBM Plex Mono",monospace; font-size:8.5px; letter-spacing:.05em; text-transform:uppercase}
+.rail-badge{
+  position:absolute; top:3px; right:4px; min-width:15px; height:15px; border-radius:8px;
+  background:var(--crit); color:#fff; font-family:"IBM Plex Mono",monospace; font-size:9.5px;
+  font-weight:600; display:grid; place-items:center; padding:0 4px;
+}
+:root[data-theme="dark"] .rail-badge, :root:not([data-theme="light"]) .rail-badge{color:#180B09}
+
+.rail-spacer{flex:1}
+#signOut{order:99}
+.main{display:flex; flex-direction:column; min-width:0}
+
+/* ============ topbar ============ */
+.topbar{background:var(--surface); border-bottom:1px solid var(--line)}
+.topbar-a{display:flex; align-items:center; gap:18px; padding:11px 20px 10px; flex-wrap:wrap}
+.venue h1{font-family:"Barlow Condensed",sans-serif; font-weight:700; font-size:22px; margin:0; line-height:1.1}
+.venue p{margin:0; font-size:12px; color:var(--muted)}
+.datenav{display:flex; align-items:center; gap:2px; margin-left:auto}
+.datenav button{width:26px; height:26px; border-radius:5px; color:var(--muted); display:grid; place-items:center; font-size:15px}
+.datenav button:hover{background:var(--surface-2); color:var(--ink)}
+.datenav .d{
+  font-family:"IBM Plex Mono",monospace; font-size:12.5px; padding:4px 12px;
+  border:1px solid var(--line-strong); border-radius:5px; white-space:nowrap;
+}
+.datenav .d em{font-style:normal; color:var(--muted)}
+
+.chanbar{display:flex; gap:0; padding:0 20px 0; border-top:1px solid var(--line); overflow-x:auto}
+.ch{
+  display:flex; align-items:center; gap:7px; padding:8px 16px 8px 0; margin-right:16px;
+  border-right:1px solid var(--line); white-space:nowrap;
+}
+.ch:last-child{border-right:none; margin-right:0}
+.ch-dot{width:7px; height:7px; border-radius:50%; flex:none}
+.ch-name{font-size:12.5px; font-weight:600}
+.ch-meta{font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--muted)}
+.ch.alert .ch-meta{color:var(--warn); font-weight:500}
+.pulse{animation:pulse 1.9s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.28}}
+
+/* ============ views ============ */
+.view{padding:18px 20px 40px; flex:1; min-width:0}
+
+.tiles{display:grid; grid-template-columns:repeat(auto-fit,minmax(148px,1fr)); gap:1px; background:var(--line); border:1px solid var(--line); border-radius:6px; overflow:hidden; margin-bottom:16px}
+.tile{background:var(--surface); padding:11px 15px 13px; display:flex; flex-direction:column; gap:3px}
+.tile-v{font-family:"Barlow Condensed",sans-serif; font-weight:700; font-size:27px; line-height:1; font-variant-numeric:tabular-nums}
+.tile-s{font-size:11.5px; color:var(--muted)}
+.tile.star{background:var(--amber-soft)}
+.tile.star .tile-v{color:var(--amber)}
+.tile.star .lbl{color:var(--amber)}
+
+.legend{display:flex; flex-wrap:wrap; gap:6px 14px; align-items:center; margin-bottom:11px}
+.lg{display:flex; align-items:center; gap:6px; font-size:12px; color:var(--ink-2)}
+.lg i{width:11px; height:11px; border-radius:2.5px; display:block; flex:none}
+.lg.direct i{background:var(--direct-soft); border:1.5px solid var(--direct)}
+.lg.maint i{background:repeating-linear-gradient(135deg,var(--line-strong) 0 3px,transparent 3px 6px); border:1px solid var(--line-strong)}
+.legend .spacer{flex:1}
+.legend .hint{font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--faint)}
+
+/* ============ the board ============ */
+.board{background:var(--surface); border:1px solid var(--line); border-radius:6px; box-shadow:var(--shadow-sm); overflow:hidden}
+.board-grid{display:grid; grid-template-columns:150px minmax(0,1fr)}
+.courts{border-right:1px solid var(--line-strong); background:var(--surface)}
+.courts-head{height:32px; border-bottom:1px solid var(--line-strong)}
+.court{
+  height:var(--rowh); border-bottom:1px solid var(--line); padding:11px 13px;
+  display:flex; flex-direction:column; justify-content:center; gap:2px;
+}
+.court:last-child{border-bottom:none}
+.court b{font-family:"Barlow Condensed",sans-serif; font-weight:600; font-size:17px; line-height:1.1}
+.court span{font-size:11px; color:var(--muted)}
+.court .util{font-family:"IBM Plex Mono",monospace; font-size:10.5px; color:var(--faint); margin-top:2px}
+
+.scroller{overflow-x:auto; position:relative}
+.track{min-width:max-content; position:relative}
+.hours{display:grid; grid-template-columns:repeat(40,var(--col)); height:32px; border-bottom:1px solid var(--line-strong)}
+.hr{
+  grid-column:span 4; border-left:1px solid var(--line); padding:8px 0 0 6px;
+  font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--muted);
+}
+.hr:first-child{border-left:none}
+.hr.peak{color:var(--ink-2); font-weight:500; background:var(--surface-2)}
+.hr.newday{border-left:2px dashed var(--line-strong); color:var(--brand); font-weight:600}
+.row{
+  display:grid; grid-template-columns:repeat(40,var(--col)); height:var(--rowh);
+  border-bottom:1px solid var(--line); position:relative;
+  background-image:
+    repeating-linear-gradient(to right, var(--line) 0 1px, transparent 1px calc(var(--col)*4)),
+    repeating-linear-gradient(to right, var(--surface-2) 0 1px, transparent 1px var(--col));
+}
+.row:last-child{border-bottom:none}
+.nowline{position:absolute; top:32px; bottom:0; width:2px; background:var(--amber-line); z-index:6; pointer-events:none}
+.nowline::before{
+  content:""; position:absolute; top:-4px; left:-3px; width:8px; height:8px;
+  border-radius:50%; background:var(--amber-line);
+}
+.nowline .t{
+  position:absolute; top:-30px; left:-19px; font-family:"IBM Plex Mono",monospace; font-size:10px;
+  font-weight:600; background:var(--amber-line); color:var(--on-amber); padding:1px 5px; border-radius:3px;
+}
+.daybreak{position:absolute; top:0; bottom:0; width:0; border-left:2px dashed var(--line-strong); z-index:1; pointer-events:none}
+
+.blk{
+  margin:5px 2px; border-radius:4px; padding:6px 8px 5px; text-align:left; overflow:hidden;
+  display:flex; flex-direction:column; gap:1px; position:relative; z-index:3;
+  border-left:3px solid var(--bc); background:var(--bs); color:var(--ink);
+  transition:transform .1s, box-shadow .1s;
+}
+.blk:hover{transform:translateY(-1px); box-shadow:var(--shadow); z-index:5}
+.blk[aria-pressed="true"]{box-shadow:0 0 0 2px var(--ink); z-index:5}
+.blk .p{font-family:"IBM Plex Mono",monospace; font-size:9.5px; letter-spacing:.07em; text-transform:uppercase; color:var(--bc); font-weight:600}
+.blk .n{font-size:12.5px; font-weight:600; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.blk .m{font-family:"IBM Plex Mono",monospace; font-size:10.5px; color:var(--muted); margin-top:auto; display:flex; gap:7px; align-items:center}
+.blk.playo{--bc:var(--playo); --bs:var(--playo-soft)}
+.blk.khelo{--bc:var(--khelo); --bs:var(--khelo-soft)}
+.blk.hudle{--bc:var(--hudle); --bs:var(--hudle-soft)}
+.blk.district{--bc:var(--district); --bs:var(--district-soft)}
+.blk.turfpro{--bc:var(--turfpro); --bs:var(--turfpro-soft)}
+.filters{display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin:0 0 12px}
+.filters .flabel{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-right:4px}
+.fchip{display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line-strong, var(--line)); background:var(--surface); color:var(--ink-2); border-radius:99px; padding:5px 12px; font-size:12.5px; cursor:pointer}
+.fchip i{width:8px; height:8px; border-radius:50%; display:inline-block}
+.fchip[aria-pressed="true"]{background:var(--ink); color:var(--surface); border-color:var(--ink)}
+.datenav{flex-wrap:wrap; justify-content:flex-end; padding-right:46px}
+.dayinput{width:128px; font:inherit; font-size:12px; border:1px solid var(--line); background:var(--surface); color:var(--ink); border-radius:5px; padding:3px 6px; margin-left:4px}
+.todaybtn{font-size:11px; border:1px solid var(--line); background:var(--surface); color:var(--ink-2); border-radius:5px; padding:4px 8px; margin-left:4px; cursor:pointer}
+.login-row{display:grid; grid-template-columns:150px 1fr auto; gap:10px; align-items:center; padding:12px 16px; border-bottom:1px solid var(--line)}
+.login-row:last-child{border-bottom:0}
+.login-row .who{display:flex; flex-direction:column; gap:2px; font-weight:600}
+.login-row .who small{font-weight:400; color:var(--muted); font-size:11.5px}
+.login-row input{font:inherit; font-size:13px; border:1px solid var(--line); background:var(--surface); color:var(--ink); border-radius:5px; padding:8px 10px; min-width:0}
+.login-row .acts{display:flex; gap:6px}
+.login-use{grid-column:2 / -1; font-size:12px; color:var(--muted); margin-top:-4px}
+.sealnote{padding:10px 16px; font-size:12.5px; color:var(--ink-2); background:var(--surface-2); border-bottom:1px solid var(--line)}
+@media (max-width:760px){ .login-row{grid-template-columns:1fr} .login-use{grid-column:1} }
+.blk.direct{--bc:var(--direct); --bs:var(--direct-soft); border-left-style:double; border-left-width:4px}
+
+.pips{display:flex; gap:2.5px; margin-left:auto}
+.pips i{width:6px; height:6px; border-radius:50%; display:block; background:var(--pc); opacity:.9}
+.pips i.pending{background:none; border:1.5px solid var(--pc); opacity:.75; animation:pulse 1.6s ease-in-out infinite}
+.pips i.fail{background:var(--crit)}
+
+.blk.syncing{border-left-style:dashed}
+.blk .syncflag{
+  font-family:"IBM Plex Mono",monospace; font-size:9.5px; color:var(--amber);
+  font-weight:600; letter-spacing:.04em;
+}
+
+.maint{
+  margin:5px 2px; border-radius:4px; z-index:2; border:1px solid var(--line-strong);
+  background:repeating-linear-gradient(135deg,var(--surface-3) 0 5px, var(--surface) 5px 10px);
+  display:flex; align-items:center; padding:0 9px;
+  font-family:"IBM Plex Mono",monospace; font-size:10.5px; color:var(--muted);
+}
+
+.conf{
+  margin:5px 2px; border-radius:4px; z-index:4; padding:5px 8px; text-align:left;
+  border:1.5px solid var(--crit); overflow:hidden;
+  background:repeating-linear-gradient(135deg,var(--crit-soft) 0 6px, transparent 6px 12px), var(--surface);
+  display:flex; flex-direction:column; gap:2px; transition:transform .1s, box-shadow .1s;
+}
+.conf:hover{transform:translateY(-1px); box-shadow:var(--shadow)}
+.conf .ct{display:flex; align-items:center; gap:5px; font-family:"IBM Plex Mono",monospace; font-size:9.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--crit); font-weight:600}
+.conf .cr{font-size:11.5px; line-height:1.25; display:flex; align-items:center; gap:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.conf .cr i{width:8px; height:2.5px; border-radius:2px; flex:none}
+
+/* ============ drawer ============ */
+.drawer{
+  width:352px; flex:none; background:var(--surface); border-left:1px solid var(--line);
+  padding:0 0 30px; position:sticky; top:0; align-self:flex-start; max-height:100vh; overflow-y:auto;
+}
+.layout{display:flex; min-width:0; align-items:flex-start}
+.layout > .view{flex:1; min-width:0}
+.dr-head{padding:15px 18px 13px; border-bottom:1px solid var(--line); display:flex; align-items:flex-start; gap:10px}
+.dr-head .close{margin-left:auto; color:var(--muted); font-size:19px; line-height:1; padding:2px 5px; border-radius:4px}
+.dr-head .close:hover{background:var(--surface-2); color:var(--ink)}
+.dr-chip{
+  display:inline-flex; align-items:center; gap:6px; font-family:"IBM Plex Mono",monospace;
+  font-size:10px; letter-spacing:.08em; text-transform:uppercase; font-weight:600;
+  padding:3px 8px; border-radius:3px; margin-bottom:6px;
+}
+.dr-head h2{font-family:"Barlow Condensed",sans-serif; font-weight:700; font-size:23px; margin:0; line-height:1.1}
+.dr-head .sub{font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--muted); margin-top:3px}
+.dr-sec{padding:14px 18px; border-bottom:1px solid var(--line)}
+.dr-sec > .lbl{display:block; margin-bottom:9px}
+.kv{display:flex; justify-content:space-between; gap:14px; padding:4px 0; font-size:13px}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0; font-family:"IBM Plex Mono",monospace; text-align:right}
+.kv.total{border-top:1px solid var(--line); margin-top:6px; padding-top:8px; font-weight:600}
+.kv.total dd{color:var(--brand); font-size:14.5px}
+
+.fan{list-style:none; margin:0; padding:0}
+.fan li{display:grid; grid-template-columns:15px 1fr auto; gap:0 10px; padding:0 0 13px; position:relative}
+.fan li:last-child{padding-bottom:0}
+.fan li::before{
+  content:""; position:absolute; left:6.5px; top:14px; bottom:-1px; width:1.5px; background:var(--line-strong);
+}
+.fan li:last-child::before{display:none}
+.fan .mk{width:15px; height:15px; border-radius:50%; margin-top:1px; display:grid; place-items:center; background:var(--mc); z-index:1}
+.fan .mk svg{width:9px; height:9px; color:var(--surface)}
+.fan .mk.hollow{background:var(--surface); border:1.5px solid var(--mc); box-shadow:0 0 0 3px var(--surface)}
+.fan .tx{font-size:12.5px; line-height:1.35}
+.fan .tx b{font-weight:600}
+.fan .tx small{display:block; color:var(--muted); font-family:"IBM Plex Mono",monospace; font-size:10.5px; margin-top:1px}
+.fan .lat{font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--muted); padding-top:1px}
+.fan .lat.warnc{color:var(--warn); font-weight:500}
+
+.dr-actions{padding:14px 18px; display:grid; gap:7px}
+.btn{
+  display:flex; align-items:center; justify-content:center; gap:7px; padding:9px 14px;
+  border-radius:5px; font-size:13.5px; font-weight:600; border:1px solid transparent;
+}
+.btn.primary{background:var(--brand); color:var(--on-brand)}
+.btn.primary:hover{filter:brightness(1.1)}
+.btn.ghost{border-color:var(--line-strong); color:var(--ink-2)}
+.btn.ghost:hover{background:var(--surface-2)}
+.btn.danger{border-color:var(--crit); color:var(--crit)}
+.btn.danger:hover{background:var(--crit-soft)}
+
+/* ============ cards / panels ============ */
+.panel{background:var(--surface); border:1px solid var(--line); border-radius:6px; box-shadow:var(--shadow-sm); margin-bottom:16px; overflow:hidden}
+.panel-h{padding:13px 18px 12px; border-bottom:1px solid var(--line); display:flex; align-items:baseline; gap:12px; flex-wrap:wrap}
+.panel-h h2{font-family:"Barlow Condensed",sans-serif; font-weight:700; font-size:20px; margin:0; line-height:1.1}
+.panel-h .note{font-size:12.5px; color:var(--muted)}
+.panel-b{padding:16px 18px 18px}
+
+.conflict-card{border:1px solid var(--crit); border-radius:6px; overflow:hidden; background:var(--surface); box-shadow:var(--shadow-sm); margin-bottom:16px}
+.cc-h{background:var(--crit-soft); padding:12px 18px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; border-bottom:1px solid var(--crit)}
+.cc-h .badge{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.1em; text-transform:uppercase; font-weight:600; color:var(--crit); border:1px solid var(--crit); padding:2px 7px; border-radius:3px}
+.cc-h h2{font-family:"Barlow Condensed",sans-serif; font-weight:700; font-size:21px; margin:0}
+.cc-h .when{font-family:"IBM Plex Mono",monospace; font-size:11.5px; color:var(--crit); margin-left:auto}
+.cc-cause{padding:11px 18px; font-size:13px; color:var(--ink-2); background:var(--surface-2); border-bottom:1px solid var(--line)}
+.cc-cause b{font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); font-weight:500; margin-right:8px}
+.versus{display:grid; grid-template-columns:1fr auto 1fr; align-items:stretch}
+.side{padding:16px 18px}
+.side.win{background:var(--ok-soft)}
+.vs{display:grid; place-items:center; padding:0 6px; border-left:1px solid var(--line); border-right:1px solid var(--line); font-family:"Barlow Condensed",sans-serif; font-weight:700; font-size:15px; color:var(--faint)}
+.side .who{display:flex; align-items:center; gap:7px; margin-bottom:9px}
+.side .who i{width:10px; height:10px; border-radius:2.5px; flex:none}
+.side .who span{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.08em; text-transform:uppercase; font-weight:600}
+.side h3{font-family:"Barlow Condensed",sans-serif; font-weight:600; font-size:20px; margin:0 0 2px}
+.side .ph{font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--muted); margin-bottom:10px}
+.side .facts{display:grid; gap:3px; font-size:12.5px}
+.side .facts div{display:flex; justify-content:space-between; gap:10px}
+.side .facts span:last-child{font-family:"IBM Plex Mono",monospace; color:var(--ink-2)}
+.side .verdict{
+  margin-top:11px; font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.07em;
+  text-transform:uppercase; font-weight:600; display:flex; align-items:center; gap:6px;
+}
+.side.win .verdict{color:var(--ok)}
+.side.lose .verdict{color:var(--warn)}
+.cc-actions{padding:14px 18px; border-top:1px solid var(--line); display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+.cc-actions .btn{flex:0 0 auto}
+.cc-actions .spacer{flex:1}
+.cc-msg{
+  margin:0 18px 16px; padding:11px 13px; border-radius:5px; background:var(--surface-2);
+  border:1px dashed var(--line-strong); font-size:12.5px; color:var(--ink-2); line-height:1.5;
+}
+.cc-msg .lbl{display:block; margin-bottom:5px}
+.resolved-note{display:none; padding:14px 18px; background:var(--ok-soft); border-top:1px solid var(--ok); font-size:13px; color:var(--ok); font-weight:600; align-items:center; gap:8px}
+
+.app-card{border:1px solid var(--line); border-radius:6px; background:var(--surface); box-shadow:var(--shadow-sm); margin-bottom:12px; overflow:hidden}
+.app-card.off{opacity:.7}
+.app-h{display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:11px 16px; border-bottom:1px solid var(--line)}
+.app-h h2{font-family:"Barlow Condensed",sans-serif; font-weight:700; font-size:19px; margin:0}
+.app-pill{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.1em; text-transform:uppercase; font-weight:600; padding:2px 7px; border-radius:3px; border:1px solid currentColor}
+.app-pill.on{color:var(--ok, #15573d)} .app-pill.off{color:var(--muted)} .app-pill.bad{color:var(--crit)} .app-pill.warn{color:var(--warn)}
+.app-stats{display:flex; gap:18px; margin-left:auto; font-size:12px; color:var(--muted)}
+.app-stats b{font-family:"Barlow Condensed",sans-serif; font-size:20px; color:var(--ink); margin-right:4px}
+.app-off{padding:12px 16px; font-size:13px; color:var(--muted)}
+.task-card{border:1px solid var(--warn); border-radius:6px; overflow:hidden; background:var(--surface); box-shadow:var(--shadow-sm); margin-bottom:12px}
+.task-card.overdue{border-color:var(--crit)}
+.tc-h{background:var(--warn-soft); padding:11px 16px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; border-bottom:1px solid var(--warn)}
+.task-card.overdue .tc-h{background:var(--crit-soft); border-bottom-color:var(--crit)}
+.tc-h .badge{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.1em; text-transform:uppercase; font-weight:600; color:var(--warn); border:1px solid var(--warn); padding:2px 7px; border-radius:3px}
+.task-card.overdue .tc-h .badge{color:var(--crit); border-color:var(--crit)}
+.tc-h h2{font-family:"Barlow Condensed",sans-serif; font-weight:700; font-size:19px; margin:0}
+.tc-h .when{font-family:"IBM Plex Mono",monospace; font-size:11.5px; color:var(--muted); margin-left:auto}
+.tc-body{padding:12px 16px; font-size:13px; color:var(--ink-2); line-height:1.5}
+.tc-actions{padding:12px 16px; border-top:1px solid var(--line); display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+
+.pair-result{margin:0 18px 14px; padding:13px 15px; border-radius:5px; background:var(--warn-soft); border:1px dashed var(--warn); font-size:12.5px; color:var(--ink-2); line-height:1.6}
+.pair-result b{display:block; color:var(--warn); font-size:11px; letter-spacing:.06em; text-transform:uppercase; margin-bottom:5px}
+.pair-result .tok{font-family:"IBM Plex Mono",monospace; font-size:12.5px; background:var(--surface); border:1px solid var(--line-strong); border-radius:4px; padding:8px 10px; display:block; margin:6px 0; word-break:break-all; user-select:all}
+
+.tw{overflow-x:auto}
+table{border-collapse:collapse; width:100%; font-size:13px; min-width:640px}
+th{
+  text-align:left; font-family:"IBM Plex Mono",monospace; font-weight:500; font-size:9.5px;
+  letter-spacing:.1em; text-transform:uppercase; color:var(--muted); padding:9px 14px;
+  border-bottom:1px solid var(--line-strong); white-space:nowrap;
+}
+td{padding:10px 14px; border-bottom:1px solid var(--line); vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+th.n,td.n{text-align:right; font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums; white-space:nowrap}
+tfoot td{border-top:1px solid var(--line-strong); border-bottom:none; font-weight:600; background:var(--surface-2)}
+.pname{display:flex; align-items:center; gap:8px; font-weight:600; white-space:nowrap}
+.pname i{width:10px; height:10px; border-radius:2.5px; flex:none}
+.pill{
+  display:inline-flex; align-items:center; gap:5px; font-family:"IBM Plex Mono",monospace;
+  font-size:10.5px; padding:2px 8px; border-radius:11px; font-weight:500; white-space:nowrap;
+}
+.pill.ok{background:var(--ok-soft); color:var(--ok)}
+.pill.warn{background:var(--warn-soft); color:var(--warn)}
+.pill.crit{background:var(--crit-soft); color:var(--crit)}
+.pill.idle{background:var(--surface-2); color:var(--muted)}
+
+.chart{
+  display:grid; grid-template-columns:repeat(10,1fr); gap:5px; align-items:end;
+  height:152px; padding-top:20px; box-sizing:border-box; margin-top:2px;
+}
+.bar{height:100%; display:flex; align-items:flex-end}
+.bar .fill{
+  width:100%; border-radius:4px 4px 0 0; background:var(--bar); position:relative;
+}
+.bar .v{
+  position:absolute; top:-17px; left:-3px; right:-3px; text-align:center;
+  font-family:"IBM Plex Mono",monospace; font-size:10.5px; color:var(--muted);
+}
+.bar.peak .fill{background:var(--brand)}
+.bar.peak .v{color:var(--brand); font-weight:600}
+.axis{display:grid; grid-template-columns:repeat(10,1fr); gap:4px; margin-top:7px; border-top:1px solid var(--line); padding-top:6px}
+.axis span{font-family:"IBM Plex Mono",monospace; font-size:10.5px; color:var(--muted); text-align:center}
+.chart-note{font-size:12.5px; color:var(--muted); margin:14px 0 0; max-width:62ch}
+
+.map{display:grid; gap:1px; background:var(--line)}
+.maprow{background:var(--surface); padding:13px 18px; display:grid; grid-template-columns:170px 1fr auto; gap:14px; align-items:center}
+.maprow .canon b{font-family:"Barlow Condensed",sans-serif; font-weight:600; font-size:18px; display:block; line-height:1.1}
+.maprow .canon span{font-size:11.5px; color:var(--muted)}
+.maplist{display:flex; flex-wrap:wrap; gap:6px}
+.mapchip{
+  display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line-strong);
+  border-radius:4px; padding:4px 9px; font-size:12px; background:var(--surface-2);
+}
+.mapchip i{width:8px; height:8px; border-radius:2px; flex:none}
+.mapchip b{font-weight:600}
+.mapchip span{font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--muted)}
+.mapchip.unmapped{border-style:dashed; color:var(--warn); background:var(--warn-soft)}
+
+.device{display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:1px; background:var(--line)}
+.device div{background:var(--surface); padding:12px 16px 14px}
+.device .dv{font-family:"Barlow Condensed",sans-serif; font-weight:600; font-size:21px; line-height:1.1; margin-top:2px}
+.device .ds{font-size:11.5px; color:var(--muted); margin-top:1px}
+
+.partners{display:grid; gap:1px; background:var(--line)}
+.partners > div{background:var(--surface); padding:11px 18px; display:flex; align-items:center; gap:12px}
+.partners .pn{font-weight:600}
+.partners .pr{font-family:"IBM Plex Mono",monospace; font-size:11.5px; color:var(--muted)}
+.partners .pv{margin-left:auto; font-family:"IBM Plex Mono",monospace; font-weight:600}
+
+.empty{padding:26px 18px; text-align:center; color:var(--muted); font-size:13.5px}
+
+@media (max-width:1100px){
+  .layout{flex-direction:column}
+  .drawer{width:100%; position:static; max-height:none; border-left:none; border-top:1px solid var(--line)}
+}
+@media (max-width:620px){
+  body{font-size:13px; padding-bottom:62px}
+  .app{display:block; min-height:100vh}
+  .main{min-width:0}
+  .rail{position:fixed; z-index:20; left:0; right:0; bottom:0; top:auto; height:58px; padding:4px 6px; flex-direction:row; justify-content:space-around; gap:2px; border-top:1px solid var(--line-strong)}
+  .rail-mark,.rail-spacer{display:none}
+  .rail-btn{width:58px; height:50px; padding:5px 0 3px; border-radius:6px}
+  .rail-btn span{font-size:8px}
+  #signOut{order:0}
+  .view{padding:12px 10px 20px}
+  .topbar-a{padding:9px 10px; gap:8px; flex-wrap:nowrap}
+  .venue h1{font-size:20px}
+  .venue p{font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:180px}
+  .datenav{margin-left:auto; flex:none}
+  .datenav .d{font-size:11px; padding:4px 7px}
+  .chanbar{padding:0 10px; gap:0}
+  .ch{padding:7px 10px 7px 0; margin-right:10px}
+  .ch-name{font-size:11px}
+  .ch-meta{font-size:10px}
+  .tiles{grid-template-columns:repeat(2,minmax(0,1fr)); margin-bottom:12px}
+  .tile{padding:10px 11px}
+  .tile-v{font-size:24px}
+  .tile-s{font-size:10.5px}
+  .board-grid{grid-template-columns:92px minmax(0,1fr)}
+  .court{padding:8px 7px; height:68px}
+  .court b{font-size:14px}
+  .court span{font-size:9.5px}
+  .court .util{font-size:9px}
+  .board{border-radius:4px}
+  .drawer{width:100%; max-height:none; position:static; border-left:0; border-top:1px solid var(--line)}
+  .panel-h{padding:11px 12px; display:block}
+  .panel-h .note{display:block; margin-top:3px}
+  .tw{overflow-x:auto; -webkit-overflow-scrolling:touch}
+  .tw table{min-width:650px}
+  .versus{grid-template-columns:1fr}
+  .vs{border:none; border-top:1px solid var(--line); border-bottom:1px solid var(--line); padding:5px 0}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <nav class="rail" aria-label="Sections">
+    <div class="rail-mark">TS</div>
+    <button class="rail-btn" data-view="board" aria-selected="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M9 9v12M15 9v12"/></svg>
+      <span>Board</span>
+    </button>
+    <button class="rail-btn" data-view="conflicts" aria-selected="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v4M12 17.5v.01"/></svg>
+      <span>Alerts</span>
+      <em class="rail-badge" id="alertBadge" hidden>0</em>
+    </button>
+    <button class="rail-btn" data-view="blocking" aria-selected="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+      <span>Blocking</span>
+      <em class="rail-badge" id="blockBadge" hidden>0</em>
+    </button>
+    <button class="rail-btn" data-view="money" aria-selected="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 4h12M6 9h12M15 4c0 5-3 5-9 5 4 0 9 3 9 11"/></svg>
+      <span>Money</span>
+    </button>
+    <div class="rail-spacer"></div>
+    <button class="rail-btn" id="signOut" title="Sign out">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 17l-5-5 5-5M5 12h11"/></svg>
+      <span>Out</span>
+    </button>
+    <button class="rail-btn" data-view="setup" aria-selected="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2.4"/><circle cx="9" cy="17" r="2.4"/></svg>
+      <span>Setup</span>
+    </button>
+  </nav>
+
+  <div class="main">
+
+    <header class="topbar">
+      <div class="topbar-a">
+        <div class="venue">
+          <h1 id="venueName">—</h1>
+          <p id="venueMeta">Connecting…</p>
+        </div>
+        <div class="datenav">
+          <button aria-label="Previous day" id="dayPrev">&lsaquo;</button>
+          <span class="d" id="dateLabel">—</span>
+          <button aria-label="Next day" id="dayNext">&rsaquo;</button>
+          <input type="date" class="dayinput" id="dayPick" aria-label="Jump to a date">
+          <button class="todaybtn" id="dayToday">Today</button>
+        </div>
+      </div>
+      <div class="chanbar" id="chanbar"></div>
+    </header>
+
+    <div class="layout">
+
+      <main class="view" id="view-board">
+        <div class="filters" id="appFilters" role="group" aria-label="Show bookings from"></div>
+        <div class="tiles" id="boardTiles"></div>
+
+        <div class="legend">
+          <span class="lg"><i style="background:var(--playo)"></i>Playo</span>
+          <span class="lg"><i style="background:var(--khelo)"></i>KheloMore</span>
+          <span class="lg"><i style="background:var(--hudle)"></i>Hudle</span>
+          <span class="lg"><i style="background:var(--district)"></i>District</span>
+          <span class="lg"><i style="background:var(--turfpro)"></i>TurfPro</span>
+          <span class="lg direct"><i></i>Direct &middot; walk-in &amp; WhatsApp</span>
+          <span class="lg maint"><i></i>Maintenance</span>
+          <span class="spacer"></span>
+          <span class="hint">Filled dot = block verified &middot; hollow = in flight</span>
+        </div>
+
+        <div class="board">
+          <div class="board-grid">
+            <div class="courts">
+              <div class="courts-head"></div>
+              <div id="courtsCol"></div>
+            </div>
+            <div class="scroller" id="scroller">
+              <div class="track">
+                <div class="hours">
+                  <div class="hr">16:00</div>
+                  <div class="hr">17:00</div>
+                  <div class="hr peak">18:00</div>
+                  <div class="hr peak">19:00</div>
+                  <div class="hr peak">20:00</div>
+                  <div class="hr peak">21:00</div>
+                  <div class="hr peak">22:00</div>
+                  <div class="hr">23:00</div>
+                  <div class="hr newday" id="newdayLabel">00:00</div>
+                  <div class="hr">01:00</div>
+                </div>
+                <div class="daybreak" style="left:calc(var(--col) * 32)"></div>
+                <div id="nowlineHost"></div>
+                <div id="trackRows"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <main class="view" id="view-conflicts" hidden>
+        <div id="turfproTasks"></div>
+        <div id="syncTasks"></div>
+        <div id="conflictOpen"></div>
+        <div class="panel">
+          <div class="panel-h"><h2>Resolved this week</h2><span class="note">Every conflict keeps its audit trail &mdash; block receipts, timings, and what you decided.</span></div>
+          <div class="tw"><table>
+            <thead><tr><th>When</th><th>Court &amp; slot</th><th>Platforms</th><th>Cause</th><th>Resolution</th><th class="n">Cost</th></tr></thead>
+            <tbody id="resolvedBody"></tbody>
+          </table></div>
+        </div>
+      </main>
+
+      <main class="view" id="view-blocking" hidden>
+        <div class="panel">
+          <div class="panel-h"><h2>Blocking by app</h2><span class="note" id="blkNote">When a booking lands on one app, the slot is blocked on the others. Right now only TurfPro is switched on.</span></div>
+        </div>
+        <div id="blkTasks"></div>
+        <div id="blkApps"></div>
+      </main>
+
+      <main class="view" id="view-money" hidden>
+        <div class="tiles" id="moneyTiles"></div>
+        <div class="panel">
+          <div class="panel-h"><h2 id="moneyHeading">By platform</h2><span class="note">Commission rates are per-venue, as negotiated &mdash; not the platform's list rate.</span></div>
+          <div class="tw"><table>
+            <thead>
+              <tr><th>Channel</th><th class="n">Bookings</th><th class="n">Gross</th><th class="n">Rate</th><th class="n">Commission</th><th class="n">Net</th><th>Payout cycle</th><th>Settlement</th></tr>
+            </thead>
+            <tbody id="moneyBody"></tbody>
+            <tfoot id="moneyFoot"></tfoot>
+          </table></div>
+        </div>
+        <div class="panel">
+          <div class="panel-h"><h2>Occupancy by hour</h2><span class="note" id="occNote">All courts, weekday average.</span></div>
+          <div class="panel-b">
+            <div class="chart" id="chart" role="img" aria-label="Occupancy by hour, all courts."></div>
+            <div class="axis" id="chartAxis"></div>
+            <p class="chart-note" id="chartNote"></p>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-h"><h2 id="partnerHeading">Partner split</h2><span class="note">Each partner sees this on their own read-only login. Nobody has to take anyone's word for it.</span></div>
+          <div class="partners" id="partners"></div>
+        </div>
+      </main>
+
+      <main class="view" id="view-setup" hidden>
+        <div class="panel">
+          <div class="panel-h">
+            <h2>How blocking works</h2>
+            <span class="note">TurfPro is the only app TurfSync blocks for you right now: it blocks the slot itself using the TurfPro login you completed once inside this app (see App logins below). Playo, Hudle, KheloMore and District are switched off &mdash; nothing is blocked on them. If a block can't be completed, it appears under <b>Blocking</b> and <b>Alerts</b> with a button to open the app.</span>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-h">
+            <h2>App logins</h2>
+            <span class="note">Whether TurfSync is signed in to each app. You sign in once, yourself, inside the tablet app &mdash; TurfSync never asks for or stores a password.</span>
+          </div>
+          <div id="loginRows"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-h"><h2>Login activity</h2><span class="note">Every time a saved login was used, and what for. Passwords are never recorded.</span></div>
+          <div class="tw"><table>
+            <thead><tr><th>When</th><th>App</th><th>Action</th><th>Result</th><th>Details</th></tr></thead>
+            <tbody id="loginActivity"></tbody>
+          </table></div>
+        </div>
+        <div class="panel">
+          <div class="panel-h">
+            <h2>Court mapping</h2>
+            <span class="note">Every platform names your pitches differently. Get this wrong and TurfSync blocks the wrong ground &mdash; so each mapping is confirmed by a live test block before it goes live.</span>
+          </div>
+          <div class="map" id="mapRows"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-h"><h2>Counter tablet</h2><span class="note">If this device goes quiet, an empty board looks exactly like a slow evening. We alert instead of guessing.</span>
+            <button class="btn primary" id="pairDevice" style="margin-left:auto">Pair new device</button>
+          </div>
+          <div id="pairResult" hidden></div>
+          <div class="device" id="deviceGrid"></div>
+          <div class="tw"><table>
+            <thead><tr><th>Partner app</th><th>Last notification</th><th>Today</th><th>Email confirmations</th><th>Status</th></tr></thead>
+            <tbody id="deviceApps"></tbody>
+          </table></div>
+        </div>
+        <div class="panel">
+          <div class="panel-h"><h2>Activity log</h2><span class="note">Latest notification payloads received by TurfSync.</span></div>
+          <div class="tw"><table>
+            <thead><tr><th>Received</th><th>Platform</th><th>Channel</th><th>Status</th><th>Booking</th><th>Payload</th></tr></thead>
+            <tbody id="activityLogs"></tbody>
+          </table></div>
+        </div>
+      </main>
+
+      <aside class="drawer" id="drawer" hidden aria-label="Booking detail">
+        <div class="dr-head">
+          <div>
+            <span class="dr-chip" id="drChip"></span>
+            <h2 id="drName"></h2>
+            <div class="sub" id="drSub"></div>
+          </div>
+          <button class="close" id="drClose" aria-label="Close detail">&times;</button>
+        </div>
+        <div class="dr-sec">
+          <span class="lbl">Booking</span>
+          <dl style="margin:0">
+            <div class="kv"><dt>Customer</dt><dd id="drPhone"></dd></div>
+            <div class="kv"><dt>Booking ref</dt><dd id="drRef"></dd></div>
+            <div class="kv"><dt>Captured by</dt><dd id="drSrc"></dd></div>
+            <div class="kv"><dt>Payment</dt><dd id="drPay"></dd></div>
+          </dl>
+        </div>
+        <div class="dr-sec">
+          <span class="lbl">Money</span>
+          <dl style="margin:0">
+            <div class="kv"><dt>Gross</dt><dd id="drGross"></dd></div>
+            <div class="kv"><dt id="drRateLbl">Commission</dt><dd id="drComm"></dd></div>
+            <div class="kv total"><dt>Net to you</dt><dd id="drNet"></dd></div>
+          </dl>
+        </div>
+        <div class="dr-sec">
+          <span class="lbl">Sync fan-out</span>
+          <ul class="fan" id="drFan"></ul>
+        </div>
+        <div class="dr-actions">
+          <button class="btn ghost">View block receipts</button>
+          <button class="btn ghost">Message customer on WhatsApp</button>
+          <button class="btn danger">Cancel &amp; release the slot</button>
+        </div>
+      </aside>
+
+    </div>
+  </div>
+</div>
+
+<script src="/app.js"></script>
+</body>
+</html>

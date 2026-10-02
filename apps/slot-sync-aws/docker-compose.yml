@@ -1,0 +1,18 @@
+# Local-only stand-in for DynamoDB, S3, SQS and Secrets Manager — lets the
+# whole pipeline (ingest -> dedupe -> fan-out -> block-worker) run and be
+# tested on a laptop with no AWS account, via tools/local-run.mjs. Never used
+# by a real deploy (infra/lib/slot-sync-stack.mjs targets real AWS).
+services:
+  localstack:
+    image: localstack/localstack:3
+    container_name: slot-sync-localstack
+    ports:
+      - "4566:4566"
+    environment:
+      SERVICES: dynamodb,s3,sqs,secretsmanager,kms
+      DEFAULT_REGION: ap-south-1
+    volumes:
+      - slot-sync-localstack-data:/var/lib/localstack
+
+volumes:
+  slot-sync-localstack-data:
