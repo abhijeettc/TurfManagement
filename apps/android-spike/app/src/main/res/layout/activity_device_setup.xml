@@ -86,7 +86,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Step 2 — enter the pairing code"
+            android:text="Step 2 — connect this tablet to your venue"
             android:textSize="16sp"
             android:textStyle="bold"
             android:layout_marginBottom="2dp" />
@@ -94,9 +94,30 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="On your computer or phone, sign in to TurfSync, open Setup and tap &quot;Pair new device&quot;."
+            android:text="Sign in with your TurfSync account, or create one if this is your first time. The tablet connects itself."
             android:textSize="13sp"
-            android:layout_marginBottom="10dp" />
+            android:layout_marginBottom="12dp" />
+
+        <Button
+            android:id="@+id/signInButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Sign in or create an account" />
+
+        <!--
+          The code path is kept, but second: it is how a venue adds a tablet
+          without typing the owner's password onto it, which matters for a shared
+          counter device. It is the wrong default for someone who has just
+          installed the app and has no account for a code to come from.
+        -->
+        <TextView
+            android:id="@+id/codeToggle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="▸ I was given a pairing code"
+            android:textSize="13sp"
+            android:paddingTop="20dp"
+            android:paddingBottom="4dp" />
 
         <EditText
             android:id="@+id/codeInput"
@@ -107,13 +128,15 @@
             android:maxLength="11"
             android:textSize="24sp"
             android:hint="8 digits"
-            android:layout_marginBottom="22dp" />
+            android:layout_marginBottom="14dp"
+            android:visibility="gone" />
 
         <Button
             android:id="@+id/saveButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Pair this device" />
+            android:text="Pair with code"
+            android:visibility="gone" />
 
         <!--
           The address is correct out of the box and a venue owner has no reason

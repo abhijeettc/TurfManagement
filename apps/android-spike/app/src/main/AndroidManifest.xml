@@ -43,6 +43,11 @@
             android:name=".DeviceSetupActivity"
             android:exported="false" />
 
+        <!-- The venue's own TurfSync sign-in/sign-up, on the tablet, which also pairs it. -->
+        <activity
+            android:name=".TurfSyncLoginActivity"
+            android:exported="false" />
+
         <!-- TurfPro's owner panel inside TurfSync: where the owner signs in so blocking can run by itself. -->
         <activity
             android:name=".TurfProLoginActivity"

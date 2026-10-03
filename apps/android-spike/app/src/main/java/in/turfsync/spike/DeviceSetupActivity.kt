@@ -39,6 +39,27 @@ class DeviceSetupActivity : AppCompatActivity() {
 
         apiUrlInput.setText(config.apiUrl)
 
+        findViewById<Button>(R.id.signInButton).setOnClickListener {
+            if (!isNotificationAccessGranted()) {
+                Toast.makeText(this, "Finish step 1 first — without notification access no booking is ever captured.", Toast.LENGTH_LONG).show()
+                return@setOnClickListener
+            }
+            // The address has to be saved before the sign-in screen opens: that
+            // activity reads it back to know which server to load.
+            config.apiUrl = apiUrlInput.text.toString().trim().ifBlank { config.apiUrl }
+            startActivity(Intent(this, TurfSyncLoginActivity::class.java))
+        }
+
+        val codeToggle = findViewById<TextView>(R.id.codeToggle)
+        codeToggle.setOnClickListener {
+            val save = findViewById<Button>(R.id.saveButton)
+            val shown = codeInput.visibility == android.view.View.VISIBLE
+            val next = if (shown) android.view.View.GONE else android.view.View.VISIBLE
+            codeInput.visibility = next
+            save.visibility = next
+            codeToggle.text = if (shown) "▸ I was given a pairing code" else "▾ I was given a pairing code"
+        }
+
         val advanced = findViewById<TextView>(R.id.advancedToggle)
         advanced.setOnClickListener {
             val label = findViewById<TextView>(R.id.apiUrlLabel)
@@ -159,6 +180,16 @@ class DeviceSetupActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+
+        // TurfSyncLoginActivity stores the token itself and then closes, so this
+        // is where a successful sign-in is noticed. Without it the owner comes
+        // back to the setup screen they have just finished with.
+        if (config.isConfigured()) {
+            startActivity(Intent(this, MainActivity::class.java))
+            finish()
+            return
+        }
+
         val granted = isNotificationAccessGranted()
         accessStatus.text = if (granted) "Notification access: granted" else "Notification access: not granted yet"
         accessStatus.setTextColor(if (granted) 0xFF2F7A52.toInt() else 0xFFB93327.toInt())
