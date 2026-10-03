@@ -22,7 +22,10 @@ local.properties
 captures/
 .cxx/
 *.apk
-!apps/web/public/*.apk
+# The one exception: the build actually handed to venue owners, served by the
+# API as a static file so there is a link to send. Checked in deliberately —
+# it is the artifact, not a build output, and Render builds no Android code.
+!apps/web/public/download/*.apk
 *.aab
 *.ap_
 *.dex

@@ -13,8 +13,11 @@ android {
         // no counter tablet in service today falls below.
         minSdk = 24
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        // Bump versionCode on every build handed to someone else: Android refuses
+        // to install over a same-or-higher code, which reads as "App not installed"
+        // with no further explanation on the tester's phone.
+        versionCode = 2
+        versionName = "0.1-beta"
     }
 
     buildTypes {
