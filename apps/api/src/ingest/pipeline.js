@@ -31,6 +31,28 @@ async function safeNotify(client, venueId, template, vars) {
   }
 }
 
+const ENQUEUE_TIMEOUT_MS = 5_000;
+
+/**
+ * See the comment at this function's call site for why a timeout is needed at
+ * all. Only a failed *block* enqueue is recovered automatically — its row is
+ * still 'queued' in Postgres for worker-entry.js's sweep to pick up. A failed
+ * *unblock* enqueue has no equivalent sweep (it is re-notifying Redis about a
+ * job already past 'queued'), so it is logged loudly rather than claimed to
+ * self-heal.
+ */
+async function safeEnqueue(fn, kind) {
+  try {
+    await Promise.race([
+      fn(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timed out')), ENQUEUE_TIMEOUT_MS)),
+    ]);
+  } catch (error) {
+    const recovery = kind === 'block' ? "the job stays 'queued' for the worker's own sweep to pick up" : 'this unblock was NOT retried automatically — it needs a manual check';
+    console.error(`enqueue${kind === 'block' ? 'Block' : 'Unblock'}() failed — ${recovery}:`, error.message);
+  }
+}
+
 /**
  * ingest → echo check → parse → map → persist → conflict check → enqueue
  * blocks → notify
@@ -246,11 +268,21 @@ export async function ingestPayload({
   });
 
   // Only now — the transaction is durably committed — do we tell Redis about
-  // any of it. A process crash between these two lines leaves `queued` rows in
-  // Postgres with no matching Redis job; the worker's startup sweep picks
-  // those up (see worker-entry.js), so nothing is silently lost.
-  for (const job of pendingBlockJobs) await enqueueBlock(job);
-  for (const job of pendingUnblockJobs) await enqueueUnblock(job);
+  // any of it. A process crash (or, as below, a Redis that is unreachable)
+  // between these two lines leaves `queued` rows in Postgres with no matching
+  // Redis job; the worker's startup sweep picks those up (see
+  // worker-entry.js), so nothing is silently lost.
+  //
+  // The BullMQ connection is deliberately configured with
+  // maxRetriesPerRequest: null (required for the worker's own connection —
+  // see blocking/redis.js), which means a command against an unreachable
+  // Redis retries forever rather than rejecting. Without a timeout here, a
+  // misconfigured REDIS_URL would hang every booking's ingest request
+  // indefinitely instead of just leaving its block job for the sweep to pick
+  // up — exactly the kind of "booking is the thing that matters" trade this
+  // file already makes for notifyOwner.
+  for (const job of pendingBlockJobs) await safeEnqueue(() => enqueueBlock(job), 'block');
+  for (const job of pendingUnblockJobs) await safeEnqueue(() => enqueueUnblock(job), 'unblock');
 
   return result;
 }
