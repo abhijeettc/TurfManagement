@@ -72,7 +72,24 @@
             android:id="@+id/saveButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Save and continue" />
+            android:text="Save and continue"
+            android:layout_marginBottom="20dp" />
+
+        <TextView
+            android:id="@+id/miuiFixLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Xiaomi/Redmi/POCO phones silently block this listener from ever running, even after access is granted above — MIUI's own Autostart list has to allow it too, or no booking will ever be captured."
+            android:textSize="12sp"
+            android:layout_marginBottom="10dp"
+            android:visibility="gone" />
+
+        <Button
+            android:id="@+id/miuiFixButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Fix background restrictions (MIUI)"
+            android:visibility="gone" />
 
     </LinearLayout>
 </ScrollView>

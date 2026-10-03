@@ -9,6 +9,9 @@ import { pool, close } from '@turfsync/db';
 import { bus } from './bus.js';
 import { requireVenue } from './auth/guard.js';
 import { startWatchdog } from './watchdog.js';
+import { startEmbeddedBlockWorker } from './blocking/embedded.js';
+import { closeQueue } from './blocking/queue.js';
+import { closeRedis } from './blocking/redis.js';
 import { applySecurity } from './security/index.js';
 import authRoutes from './routes/auth.js';
 import ingestRoutes from './routes/ingest.js';
@@ -116,9 +119,14 @@ await app.register(fastifyStatic, { root: WEB_ROOT });
 const port = Number(process.env.PORT || 3000);
 const host = process.env.HOST || '0.0.0.0';
 
+let stopBlockWorker = async () => {};
+
 try {
   await app.listen({ port, host });
   startWatchdog(app.log);
+  // Deliberately after listen(): a block worker that cannot start must never be
+  // the reason the board fails to come up.
+  stopBlockWorker = await startEmbeddedBlockWorker(app.log);
   app.log.info(`TurfSync board → http://localhost:${port}`);
 } catch (error) {
   app.log.error(error);
@@ -128,6 +136,9 @@ try {
 for (const signal of ['SIGINT', 'SIGTERM']) {
   process.on(signal, async () => {
     await app.close();
+    await stopBlockWorker();
+    await closeQueue();
+    await closeRedis();
     await close();
     process.exit(0);
   });

@@ -484,11 +484,49 @@
     return '<div class="app-card">' + head + '<div class="tw"><table><thead><tr><th>When</th><th>Ground</th><th>Date</th><th>Slot</th><th>Result</th></tr></thead><tbody>' + rows + '</tbody></table></div></div>';
   }
 
+  // A block that has been asked for but has not reached the tablet yet. Deliberately
+  // not a task card and not in the Alerts badge: nobody needs to do anything about it
+  // — it is here so "a booking landed, the block is moving" is visible rather than
+  // looking exactly like an empty evening.
+  var BLOCK_STAGE = {
+    queued: 'Queued',
+    leased: 'Blocking now',
+    retrying: 'Retrying',
+  };
+
+  function stageAge(iso) {
+    var mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return mins + ' min ago';
+    return Math.floor(mins / 60) + 'h ago';
+  }
+
+  function inProgressRow(p) {
+    // Minutes, not seconds: a healthy job clears in well under one. Anything still
+    // sitting here after a few is the worker not running, which is worth saying plainly.
+    var stuck = p.state === 'queued' && Date.now() - new Date(p.since).getTime() > 5 * 60000;
+    return '<tr><td class="mono">' + esc(stageAge(p.since)) + '</td>' +
+      '<td>' + esc(p.sourceLabel) + (p.customer ? ' &middot; ' + esc(p.customer) : '') + '</td>' +
+      '<td>' + esc(p.court) + '</td><td class="mono">' + esc(p.date) + '</td><td class="mono">' + esc(p.slot) + '</td>' +
+      '<td><span class="app-pill ' + (stuck ? 'bad' : 'warn') + '">' + esc(BLOCK_STAGE[p.state] || p.state) +
+      (p.attempts ? ' (try ' + p.attempts + ')' : '') + '</span>' +
+      (stuck ? ' <span class="note">stuck &mdash; the block worker may not be running</span>' : '') +
+      '</td></tr>';
+  }
+
+  function inProgressPanel(list) {
+    if (!list || !list.length) return '';
+    return '<div class="panel"><div class="panel-h"><h2>In progress</h2>' +
+      '<span class="note">Bookings that have just landed and are being blocked on TurfPro right now. These clear themselves.</span></div>' +
+      '<div class="tw"><table><thead><tr><th>Came in</th><th>Booking</th><th>Ground</th><th>Date</th><th>Slot</th><th>Stage</th></tr></thead>' +
+      '<tbody>' + list.map(inProgressRow).join('') + '</tbody></table></div></div>';
+  }
+
   function renderBlocking(d) {
     state.blockTaskCount = d.tasks.length;
     updateAlertBadge();
     var tasks = d.tasks.map(blockTaskCard).join('');
-    $('blkTasks').innerHTML = tasks;
+    $('blkTasks').innerHTML = tasks + inProgressPanel(d.inProgress);
     $('turfproTasks').innerHTML = tasks;
     $('blkApps').innerHTML = d.apps.map(appCard).join('');
     wireBlockButtons($('blkTasks'));

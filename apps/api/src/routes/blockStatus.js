@@ -84,6 +84,40 @@ export default async function blockStatusRoutes(app) {
       };
     });
 
+    // Everything between "a booking landed" and "the tablet has it": queued (written,
+    // Redis not yet told, or told and not yet picked up), leased (a worker holds it),
+    // retrying (an attempt failed, backing off). None of these states reached this route
+    // before, so a block that never got past 'queued' — the exact shape of a worker that
+    // is down or pointed at the wrong Redis — looked identical on the Blocking tab to a
+    // venue where nothing had happened at all.
+    const { rows: inFlight } = await pool.query(
+      `select j.id, j.state, j.attempts, j.enqueued_at, b.slot, b.platform as source_platform,
+              b.customer_name, c.name as court_name
+         from block_jobs j
+         join bookings b on b.id = j.booking_id
+         join courts c on c.id = b.court_id
+        where b.venue_id = $1 and j.target_platform = 'turfpro'
+          and j.state in ('queued','leased','retrying')
+        order by j.priority, j.enqueued_at`,
+      [venue.id],
+    );
+
+    const inProgress = inFlight.map((r) => {
+      const { startMs, endMs } = fromRange(r.slot);
+      return {
+        id: r.id,
+        state: r.state,
+        attempts: r.attempts,
+        since: r.enqueued_at,
+        court: r.court_name,
+        date: localDateStr(startMs),
+        slot: `${localHhmm(startMs)}–${localHhmm(endMs)}`,
+        sourcePlatform: r.source_platform,
+        sourceLabel: PLATFORM_LABELS[r.source_platform] ?? r.source_platform,
+        customer: r.customer_name,
+      };
+    });
+
     // One summary card, matching apps/web/public/app.js's appCard() shape —
     // Playo/Hudle/KheloMore/District never reach this route, so they are
     // reported switched off here regardless of their real platform_accounts
@@ -130,6 +164,7 @@ export default async function blockStatusRoutes(app) {
 
     return {
       tasks,
+      inProgress,
       apps: [
         {
           key: 'turfpro',

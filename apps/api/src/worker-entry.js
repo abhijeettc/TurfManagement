@@ -16,32 +16,11 @@
  * agreement neither has been asked for yet, and risks the venue's listing
  * being suspended on the platform it targets.
  */
-import { fromRange } from '@turfsync/core';
 import { pool, close as closeDb } from '@turfsync/db';
 import { pingRedis, closeRedis } from './blocking/redis.js';
 import { startBlockWorker, escalateOverdueTasks } from './blocking/worker.js';
-import { enqueueBlock, closeQueue } from './blocking/queue.js';
-
-/**
- * A process can crash between committing a booking (with its block_jobs rows)
- * and telling Redis about them — pipeline.js enqueues only after the Postgres
- * transaction returns. This sweep is what makes that gap survivable: any row
- * still `queued` a safe margin after it was written has no matching Redis job
- * and gets one now, rather than sitting on the board forever as "syncing".
- */
-async function sweepOrphanedJobs() {
-  const { rows } = await pool.query(
-    `select j.booking_id, j.target_platform, b.slot
-       from block_jobs j
-       join bookings b on b.id = j.booking_id
-      where j.state = 'queued' and j.enqueued_at < now() - interval '30 seconds'`,
-  );
-  for (const row of rows) {
-    const { startMs } = fromRange(row.slot);
-    await enqueueBlock({ bookingId: row.booking_id, targetPlatform: row.target_platform, startMs });
-  }
-  if (rows.length) console.log(`[worker] re-enqueued ${rows.length} orphaned block job(s) from before this process started`);
-}
+import { closeQueue } from './blocking/queue.js';
+import { sweepOrphanedJobs } from './blocking/embedded.js';
 
 async function main() {
   if (!(await pingRedis())) {

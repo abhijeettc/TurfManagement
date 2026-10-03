@@ -44,6 +44,39 @@ class DeviceSetupActivity : AppCompatActivity() {
             startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
         }
 
+        // MIUI's own AutoStartManager rejects binding this service — silently, with the
+        // notification-access toggle above still showing "granted" — unless the app is also
+        // allowed in Settings > Apps > Permissions > Autostart. Confirmed on-device: the listener
+        // can sit unbound for hours, rejected on every retry, until that toggle is turned on.
+        // Not worth a dependency to detect this precisely, so: any Xiaomi-family build fingerprint.
+        val isMiui = listOf("xiaomi", "redmi", "poco").any {
+            android.os.Build.MANUFACTURER.contains(it, ignoreCase = true)
+        }
+        if (isMiui) {
+            findViewById<TextView>(R.id.miuiFixLabel).visibility = android.view.View.VISIBLE
+            findViewById<Button>(R.id.miuiFixButton).visibility = android.view.View.VISIBLE
+            findViewById<Button>(R.id.miuiFixButton).setOnClickListener {
+                val opened = try {
+                    startActivity(
+                        Intent().setClassName(
+                            "com.miui.securitycenter",
+                            "com.miui.permcenter.autostart.AutoStartManagementActivity",
+                        ),
+                    )
+                    true
+                } catch (e: Exception) {
+                    false
+                }
+                if (!opened) {
+                    Toast.makeText(
+                        this,
+                        "Could not open MIUI's Autostart screen — open Settings > Apps > Permissions > Autostart and allow TurfSync Owner by hand.",
+                        Toast.LENGTH_LONG,
+                    ).show()
+                }
+            }
+        }
+
         findViewById<Button>(R.id.saveButton).setOnClickListener {
             val apiUrl = apiUrlInput.text.toString().trim()
             val token = tokenInput.text.toString().trim()

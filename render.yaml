@@ -1,9 +1,14 @@
 # Render Blueprint for TurfSync.
 #
-# This deploys only `apps/api` (the Fastify dashboard) and its block-job
-# worker — the Phase 1/3 read-only-board-plus-assisted-blocking system.
-# `apps/slot-sync-aws` is a separate, AWS-shaped system (Lambda + DynamoDB)
-# and is not covered here; it does not fit a Render web-service model as-is.
+# This deploys only `apps/api` (the Fastify dashboard) — the Phase 1/3
+# read-only-board-plus-assisted-blocking system. `apps/slot-sync-aws` is a
+# separate, AWS-shaped system (Lambda + DynamoDB) and is not covered here; it
+# does not fit a Render web-service model as-is.
+#
+# The block-job worker runs INSIDE turfsync-api (see the commented-out
+# turfsync-block-worker at the bottom of this file for why, and for how to
+# split it back out). Nothing extra needs setting for that: it shares the web
+# service's DATABASE_URL and REDIS_URL.
 #
 # To use: on Render, New -> Blueprint -> connect this repo -> pick the
 # branch that has this file. Render will show a plan it has derived from
@@ -72,25 +77,41 @@ services:
       # already hard-disables it when NODE_ENV=production, and it must never be
       # set here regardless.
 
-  - type: worker
-    name: turfsync-block-worker
-    runtime: node
-    plan: free
-    region: singapore
-    buildCommand: npm install
-    startCommand: npm run worker
-    envVars:
-      - key: NODE_ENV
-        value: production
-      - key: DATABASE_URL
-        sync: false # same Neon connection string as turfsync-api, by hand
-      - key: REDIS_URL
-        fromService:
-          type: keyvalue
-          name: turfsync-redis
-          property: connectionString
-      - key: SESSION_ENCRYPTION_KEY
-        fromService:
-          type: web
-          name: turfsync-api
-          envVarKey: SESSION_ENCRYPTION_KEY
+  # Render has no free instance type for `type: worker` — free covers web
+  # services, static sites and key-value only. This block was therefore never
+  # created on a free plan, and because pipeline.js writes block_jobs rows
+  # whether or not anything consumes them, every block sat at state 'queued'
+  # with attempts = 0 forever while the board looked perfectly healthy.
+  #
+  # So the worker now runs in-process inside turfsync-api
+  # (apps/api/src/blocking/embedded.js). The trade is the one worker-entry.js
+  # warns about: a stuck Redis can no longer be isolated from the board, and a
+  # free web service sleeps when idle, so blocks stall until the next request
+  # wakes it — the counter tablet polling /status.json every 10s is what keeps
+  # it up in practice.
+  #
+  # To split it back out: uncomment this, set it to a paid instance type, and
+  # set EMBEDDED_BLOCK_WORKER=0 on turfsync-api so the two do not both run.
+  #
+  # - type: worker
+  #   name: turfsync-block-worker
+  #   runtime: node
+  #   plan: starter # NOT free — background workers require a paid instance
+  #   region: singapore
+  #   buildCommand: npm install
+  #   startCommand: npm run worker
+  #   envVars:
+  #     - key: NODE_ENV
+  #       value: production
+  #     - key: DATABASE_URL
+  #       sync: false # same Neon connection string as turfsync-api, by hand
+  #     - key: REDIS_URL
+  #       fromService:
+  #         type: keyvalue
+  #         name: turfsync-redis
+  #         property: connectionString
+  #     - key: SESSION_ENCRYPTION_KEY
+  #       fromService:
+  #         type: web
+  #         name: turfsync-api
+  #         envVarKey: SESSION_ENCRYPTION_KEY
