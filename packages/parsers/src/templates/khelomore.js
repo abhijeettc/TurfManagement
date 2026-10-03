@@ -32,7 +32,11 @@ const PHONE = [/\b((?:\+?91[- ]?)?[6-9]\d{9})\b/];
  *     amount, and it states it bare ("637.0"), with no ₹ or Rs. marker.
  */
 export function notification(raw, refMs) {
-  if (!/khelomore/i.test(raw)) return null;
+  // Not just /khelomore/i: see turfpro.js's notification() for why a bare
+  // keyword anywhere in the body is not safe between these two templates
+  // specifically — their layouts are otherwise identical. The signature
+  // line is the actual distinguishing feature.
+  if (!/^Team KheloMore\s*$/im.test(raw)) return null;
 
   // Read each field from its own labelled line rather than scanning the whole
   // message — the venue name and the shortlink both contain digits that a

@@ -23,7 +23,15 @@ const PHONE = [/\b((?:\+?91[- ]?)?[6-9]\d{9})\b/];
  * message — treat the format as unconfirmed until one is.
  */
 export function notification(raw, refMs) {
-  if (!/turfpro/i.test(raw)) return null;
+  // Not just /turfpro/i: this template's layout is otherwise identical to
+  // khelomore.js's (same labelled lines, same "New Booking Alert" opener,
+  // from the same apparent booking-platform vendor backend), and a venue
+  // literally named "TurfPro ..." makes any OTHER platform's message about
+  // it match a bare keyword too — a real KheloMore booking for a venue with
+  // "TurfPro" in its name was misread as TurfPro's own template this way,
+  // failing with "no court mapping" instead of being parsed at all. The
+  // signature line is what actually distinguishes the two.
+  if (!/^Team TurfPro\s*$/im.test(raw)) return null;
 
   // Read each field from its own labelled line rather than scanning the whole
   // message — the venue name and the shortlink both contain digits that a
