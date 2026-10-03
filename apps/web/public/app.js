@@ -803,24 +803,50 @@
     });
   });
 
+  // A code with no visible clock is the one someone reads out four minutes
+  // after it died, then blames the tablet for.
+  var pairTimer = null;
+  function startPairCountdown(seconds) {
+    if (pairTimer) clearInterval(pairTimer);
+    var left = seconds;
+    var tick = function () {
+      var el = $('pairCountdown');
+      if (!el) { clearInterval(pairTimer); return; }
+      if (left <= 0) {
+        clearInterval(pairTimer);
+        el.textContent = 'Expired — tap Pair new device for another code.';
+        return;
+      }
+      var m = Math.floor(left / 60);
+      var s = left % 60;
+      el.textContent = 'Expires in ' + m + ':' + (s < 10 ? '0' : '') + s + ' · works once';
+      left -= 1;
+    };
+    tick();
+    pairTimer = setInterval(tick, 1000);
+  }
+
   $('pairDevice').addEventListener('click', function () {
     var btn = $('pairDevice');
     btn.disabled = true;
-    fetch('/api/devices', {
+    fetch('/api/devices/pairing-code', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ label: 'Counter tablet' }),
     }).then(function (r) { return r.json(); }).then(function (body) {
       btn.disabled = false;
-      if (!body.token) return;
-      // Shown once — the server only ever stores its hash, so this is the
-      // only chance to see it. Enter it into the Android app's setup screen.
+      if (!body.code) return;
+      // The raw token never reaches this screen any more — the tablet trades
+      // this code for one itself. Nobody has to retype 43 characters, and the
+      // thing on display stops working in minutes rather than lasting forever.
+      var pretty = body.code.slice(0, 4) + ' ' + body.code.slice(4);
       $('pairResult').hidden = false;
       $('pairResult').innerHTML =
-        '<b>Device token — shown once, copy it now</b>' +
-        'Paste this into TurfSync Owner on the tablet, under Device setup.' +
-        '<span class="tok">' + esc(body.token) + '</span>' +
-        esc(body.note || '');
+        '<b>Pairing code</b>' +
+        'On the tablet, open TurfSync Owner and enter this code.' +
+        '<span class="tok">' + esc(pretty) + '</span>' +
+        '<span id="pairCountdown"></span>';
+      startPairCountdown(body.expiresInSec || 600);
     });
   });
 

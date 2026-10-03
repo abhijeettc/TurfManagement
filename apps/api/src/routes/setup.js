@@ -1,10 +1,20 @@
-import { randomBytes } from 'node:crypto';
+import { randomBytes, randomInt } from 'node:crypto';
 import { pool, tx } from '@turfsync/db';
 import { resolveVenue } from '../venue.js';
 import { tokenHash } from '../auth/guard.js';
 import { PLATFORM_LABELS, PLATFORM_UI_KEY, PLATFORMS } from '@turfsync/core';
 
 const MARKETPLACES = PLATFORMS.filter((p) => p !== 'direct');
+
+/** Long enough to walk to the counter, short enough that a guessed code is dead. */
+const PAIRING_TTL_SEC = 10 * 60;
+/**
+ * 10^8. Eight digits rather than six because there is no per-code attempt cap
+ * to fall back on — see the note in 006_device_pairing.sql for why one cannot
+ * work here. Guessing is bounded by this space, the ten-minute life, single
+ * use, and the per-IP 'pair' rate-limit policy.
+ */
+const PAIRING_CODE_DIGITS = 8;
 
 export default async function setupRoutes(app) {
   app.get('/api/setup', async (request) => {
@@ -244,6 +254,53 @@ export default async function setupRoutes(app) {
     });
   });
 
+  /**
+   * The same pairing, as six digits a person can read down a phone line.
+   *
+   * POST /api/devices hands back the raw token, which is correct for a script
+   * and hopeless for a venue owner holding a tablet: 43 characters of
+   * base64url, case-sensitive, no spaces. This issues a code that stands in
+   * for it for a few minutes; /devices/claim below is where the tablet trades
+   * it for the real thing.
+   */
+  app.post('/api/devices/pairing-code', async (request, reply) => {
+    const { venue } = await resolveVenue(request, 'device:pair');
+    const label = request.body?.label || 'Counter tablet';
+
+    // A live collision would make the code ambiguous at claim time, and the
+    // claim path refuses rather than guessing which venue was meant. Vanishingly
+    // unlikely across 10^6 with a handful of codes alive at once, but cheap to
+    // rule out rather than reason about.
+    let code;
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const candidate = String(randomInt(0, 10 ** PAIRING_CODE_DIGITS)).padStart(PAIRING_CODE_DIGITS, '0');
+      const { rowCount } = await pool.query(
+        `select 1 from device_pairings
+          where code_hash = $1 and claimed_at is null and expires_at > now()`,
+        [tokenHash(candidate)],
+      );
+      if (!rowCount) { code = candidate; break; }
+    }
+    if (!code) throw Object.assign(new Error('Could not allocate a pairing code. Try again.'), { statusCode: 503 });
+
+    const { rows } = await pool.query(
+      `insert into device_pairings (venue_id, code_hash, label, expires_at)
+       values ($1, $2, $3, now() + ($4 || ' seconds')::interval)
+       returning id, expires_at`,
+      [venue.id, tokenHash(code), label, String(PAIRING_TTL_SEC)],
+    );
+
+    // Opportunistic cleanup — this table is write-light and nothing else sweeps it.
+    await pool.query(`delete from device_pairings where expires_at < now() - interval '1 day'`);
+
+    return reply.code(201).send({
+      code,
+      expiresAt: rows[0].expires_at,
+      expiresInSec: PAIRING_TTL_SEC,
+      note: 'Enter this on the tablet. It expires shortly and works once.',
+    });
+  });
+
   app.get('/api/devices', async (request) => {
     const { venue } = await resolveVenue(request, 'setup:read');
     const { rows } = await pool.query(
@@ -253,6 +310,65 @@ export default async function setupRoutes(app) {
       [venue.id],
     );
     return { devices: rows };
+  });
+
+  /**
+   * Trade a pairing code for a real device token. Deliberately unauthenticated
+   * and outside /api/: a tablet calling this has no session and no token yet —
+   * the code *is* the credential. Guessing is bounded by the size of the code
+   * space, its ten-minute life, single use, and the per-IP 'pair' rate-limit
+   * policy. There is no per-code attempt cap, because there cannot usefully be
+   * one: see the note in 006_device_pairing.sql.
+   *
+   * The whole exchange is one transaction and the claim is conditional on the
+   * row still being unclaimed, so two tablets racing the same code cannot both
+   * walk away with a token.
+   */
+  app.post('/devices/claim', async (request, reply) => {
+    const submitted = String(request.body?.code ?? '').replace(/\s+/g, '');
+    // Shape-check before touching the database: a code is always eight digits,
+    // and anything else is a typo or a probe, neither worth a query.
+    if (!new RegExp(`^\\d{${PAIRING_CODE_DIGITS}}$`).test(submitted)) {
+      return reply.code(400).send({ error: `Enter the ${PAIRING_CODE_DIGITS}-digit pairing code shown on the dashboard.` });
+    }
+
+    const result = await tx(async (client) => {
+      const { rows } = await client.query(
+        `select p.id, p.venue_id, p.label, p.claimed_at, p.expires_at, v.name as venue_name
+           from device_pairings p
+           join venues v on v.id = p.venue_id
+          where p.code_hash = $1
+          for update of p`,
+        [tokenHash(submitted)],
+      );
+
+      // Ambiguous (a live hash collision) is treated as no match rather than
+      // picking one — pairing a tablet to the wrong venue is far worse than
+      // asking for a fresh code.
+      if (rows.length !== 1) return { error: 'That code is not valid. Ask for a new one.' };
+      const pairing = rows[0];
+
+      if (pairing.claimed_at) return { error: 'That code has already been used. Ask for a new one.' };
+      if (new Date(pairing.expires_at) <= new Date()) return { error: 'That code has expired. Ask for a new one.' };
+
+      const token = randomBytes(32).toString('base64url');
+      await client.query(
+        `insert into device_tokens (venue_id, label, token_hash, paired_at)
+         values ($1, $2, $3, now())`,
+        [pairing.venue_id, pairing.label || 'Counter tablet', tokenHash(token)],
+      );
+      const { rowCount } = await client.query(
+        `update device_pairings set claimed_at = now() where id = $1 and claimed_at is null`,
+        [pairing.id],
+      );
+      if (!rowCount) return { error: 'That code has already been used. Ask for a new one.' };
+
+      return { token, venueName: pairing.venue_name };
+    });
+
+    if (result.error) return reply.code(400).send({ error: result.error });
+
+    return reply.code(201).send(result);
   });
 
   app.delete('/api/devices/:id', async (request, reply) => {

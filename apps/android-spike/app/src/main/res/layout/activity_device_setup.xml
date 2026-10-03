@@ -20,16 +20,50 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="On another device, sign in to TurfSync as the owner, open Setup, and tap &quot;Pair new device&quot; to get a token. Enter it below."
+            android:text="On your computer or phone, sign in to TurfSync, open Setup and tap &quot;Pair new device&quot;. A code appears. Type it in below."
             android:textSize="14sp"
             android:layout_marginBottom="20dp" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Server address"
+            android:text="Pairing code"
             android:textSize="12sp"
             android:layout_marginBottom="4dp" />
+
+        <EditText
+            android:id="@+id/codeInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="number"
+            android:digits="0123456789 "
+            android:maxLength="11"
+            android:textSize="26sp"
+            android:hint="8 digits"
+            android:layout_marginBottom="20dp" />
+
+        <!--
+          The address is correct out of the box and a venue owner has no reason
+          to think about it; it stays reachable for a self-hosted server or a
+          staging build, just not in the way of the one field that matters.
+        -->
+        <TextView
+            android:id="@+id/advancedToggle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Advanced settings"
+            android:textSize="12sp"
+            android:paddingTop="4dp"
+            android:paddingBottom="8dp" />
+
+        <TextView
+            android:id="@+id/apiUrlLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Server address"
+            android:textSize="12sp"
+            android:layout_marginBottom="4dp"
+            android:visibility="gone" />
 
         <EditText
             android:id="@+id/apiUrlInput"
@@ -37,22 +71,8 @@
             android:layout_height="wrap_content"
             android:inputType="textUri"
             android:hint="https://your-turfsync-server"
-            android:layout_marginBottom="16dp" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Device token"
-            android:textSize="12sp"
-            android:layout_marginBottom="4dp" />
-
-        <EditText
-            android:id="@+id/tokenInput"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="textVisiblePassword"
-            android:hint="Paste the token shown once on the Setup page"
-            android:layout_marginBottom="20dp" />
+            android:layout_marginBottom="16dp"
+            android:visibility="gone" />
 
         <Button
             android:id="@+id/grantAccessButton"

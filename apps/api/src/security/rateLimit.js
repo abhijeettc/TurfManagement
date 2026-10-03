@@ -66,6 +66,10 @@ const MINUTE = 60_000;
  */
 export const POLICIES = [
   { name: 'signup',    match: (r) => r.method === 'POST' && r.path === '/auth/signup',       limit: 5,   windowMs: 60 * MINUTE },
+  // Unauthenticated, and a success hands over a venue's write credential. The
+  // per-code attempt cap in setup.js kills a targeted guess; this is what makes
+  // spraying across codes expensive too. A real tablet calls it once.
+  { name: 'pair',      match: (r) => r.method === 'POST' && r.path === '/devices/claim',     limit: 10,  windowMs: 15 * MINUTE },
   { name: 'login',     match: (r) => r.method === 'POST' && r.path === '/auth/login',        limit: 30,  windowMs: 15 * MINUTE },
   { name: 'ingest',    match: (r) => r.path.startsWith('/ingest/') || r.path === '/devices/heartbeat', limit: 240, windowMs: MINUTE },
   { name: 'internal',  match: (r) => r.path.startsWith('/internal/'),                        limit: 60,  windowMs: MINUTE },

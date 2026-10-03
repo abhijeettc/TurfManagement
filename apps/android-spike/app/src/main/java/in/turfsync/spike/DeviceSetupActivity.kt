@@ -25,7 +25,7 @@ class DeviceSetupActivity : AppCompatActivity() {
 
     private lateinit var config: DeviceConfig
     private lateinit var apiUrlInput: EditText
-    private lateinit var tokenInput: EditText
+    private lateinit var codeInput: EditText
     private lateinit var accessStatus: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -34,11 +34,18 @@ class DeviceSetupActivity : AppCompatActivity() {
         config = DeviceConfig(this)
 
         apiUrlInput = findViewById(R.id.apiUrlInput)
-        tokenInput = findViewById(R.id.tokenInput)
+        codeInput = findViewById(R.id.codeInput)
         accessStatus = findViewById(R.id.accessStatus)
 
         apiUrlInput.setText(config.apiUrl)
-        tokenInput.setText(config.deviceToken)
+
+        findViewById<TextView>(R.id.advancedToggle).setOnClickListener {
+            val label = findViewById<TextView>(R.id.apiUrlLabel)
+            val shown = apiUrlInput.visibility == android.view.View.VISIBLE
+            val next = if (shown) android.view.View.GONE else android.view.View.VISIBLE
+            label.visibility = next
+            apiUrlInput.visibility = next
+        }
 
         findViewById<Button>(R.id.grantAccessButton).setOnClickListener {
             startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
@@ -79,34 +86,32 @@ class DeviceSetupActivity : AppCompatActivity() {
 
         findViewById<Button>(R.id.saveButton).setOnClickListener {
             val apiUrl = apiUrlInput.text.toString().trim()
-            val token = tokenInput.text.toString().trim()
-            if (apiUrl.isEmpty() || token.isEmpty()) {
-                Toast.makeText(this, "Both fields are required.", Toast.LENGTH_SHORT).show()
+            // The field allows spaces so the code can be typed the way it is
+            // displayed ("1234 5678"); the server wants the digits alone.
+            val code = codeInput.text.toString().filter { it.isDigit() }
+            if (apiUrl.isEmpty() || code.isEmpty()) {
+                Toast.makeText(this, "Enter the pairing code from the dashboard.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
             if (!isNotificationAccessGranted()) {
                 Toast.makeText(this, "Grant notification access first — otherwise nothing will ever be captured.", Toast.LENGTH_LONG).show()
                 return@setOnClickListener
             }
-            config.apiUrl = apiUrl
-            config.deviceToken = token
 
-            // NotificationListenerService.onListenerConnected() — the only
-            // moment it tries a heartbeat on its own — already fired the
-            // instant notification access was granted, which happens before
-            // this screen exists to save anything. Without this, the app
-            // would sit "configured" for up to 5 minutes (the next scheduled
-            // tick) before anyone could tell whether it actually worked.
             val button = findViewById<Button>(R.id.saveButton)
             button.isEnabled = false
-            button.text = "Connecting…"
-            confirmConnection(apiUrl, token) { ok, detail ->
+            button.text = "Pairing…"
+            claimToken(apiUrl, code) { token, venueName, error ->
                 Handler(Looper.getMainLooper()).post {
-                    Toast.makeText(
-                        this,
-                        if (ok) "Connected." else "Saved, but could not reach the server yet: $detail",
-                        Toast.LENGTH_LONG,
-                    ).show()
+                    if (token == null) {
+                        button.isEnabled = true
+                        button.text = "Save and continue"
+                        Toast.makeText(this, error ?: "Could not pair this device.", Toast.LENGTH_LONG).show()
+                        return@post
+                    }
+                    config.apiUrl = apiUrl
+                    config.deviceToken = token
+                    Toast.makeText(this, "Paired with ${venueName ?: "your venue"}.", Toast.LENGTH_LONG).show()
                     startActivity(Intent(this, MainActivity::class.java))
                     finish()
                 }
@@ -114,28 +119,38 @@ class DeviceSetupActivity : AppCompatActivity() {
         }
     }
 
-    /** A one-off heartbeat, purely to prove the address and token actually work right now. */
-    private fun confirmConnection(apiUrl: String, token: String, onDone: (Boolean, String) -> Unit) {
+    /**
+     * Trade the typed code for this device's own token (POST /devices/claim).
+     * Unauthenticated by design — the code is the only credential the tablet
+     * has at this point, and it is spent the moment this succeeds.
+     */
+    private fun claimToken(apiUrl: String, code: String, onDone: (String?, String?, String?) -> Unit) {
         Thread {
             try {
-                val body = JSONObject()
-                    .put("label", "Counter tablet")
-                    .put("notificationAccess", true)
-                    .put("queuedOffline", 0)
-                    .toString()
-                val conn = URL("$apiUrl/devices/heartbeat").openConnection() as HttpURLConnection
+                val body = JSONObject().put("code", code).toString()
+                val conn = URL("$apiUrl/devices/claim").openConnection() as HttpURLConnection
                 conn.requestMethod = "POST"
                 conn.setRequestProperty("Content-Type", "application/json")
-                conn.setRequestProperty("X-Device-Token", token)
                 conn.doOutput = true
                 conn.connectTimeout = 8000
                 conn.readTimeout = 8000
                 conn.outputStream.use { it.write(body.toByteArray()) }
-                val code = conn.responseCode
+
+                val code2 = conn.responseCode
+                val text = (if (code2 in 200..299) conn.inputStream else conn.errorStream)
+                    ?.bufferedReader()?.use { it.readText() } ?: ""
                 conn.disconnect()
-                if (code in 200..299) onDone(true, "") else onDone(false, "server said HTTP $code")
+
+                val json = if (text.isNotBlank()) JSONObject(text) else JSONObject()
+                if (code2 in 200..299) {
+                    onDone(json.optString("token").ifBlank { null }, json.optString("venueName").ifBlank { null }, null)
+                } else {
+                    // The server's own wording is the useful part here — it is
+                    // what distinguishes "expired" from "already used".
+                    onDone(null, null, json.optString("error").ifBlank { "Pairing failed (HTTP $code2)" })
+                }
             } catch (e: Exception) {
-                onDone(false, e.message ?: e.javaClass.simpleName)
+                onDone(null, null, "Could not reach the server: ${e.message ?: e.javaClass.simpleName}")
             }
         }.start()
     }
