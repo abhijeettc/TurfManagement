@@ -14,12 +14,14 @@
 # see apps/api/src/notify.js and .env.example) are left for you to fill in
 # by hand in the dashboard; they are marked `sync: false` below so no
 # placeholder value ends up in git.
-
-databases:
-  - name: turfsync-db
-    plan: free
-    region: singapore
-    postgresMajorVersion: "16"
+#
+# DATABASE_URL is `sync: false` too, deliberately, rather than a `databases:`
+# block wiring up Render's own managed Postgres: this deployment uses a Neon
+# Postgres instance instead. A real connection string (user, password, host)
+# belongs in the Render dashboard, never in this file — render.yaml is
+# committed to git, unlike .env, and anyone who can read the repo can read
+# this file. Set DATABASE_URL by hand on both turfsync-api and
+# turfsync-block-worker to the Neon connection string after the first deploy.
 
 services:
   - type: keyvalue
@@ -44,9 +46,7 @@ services:
       - key: TRUST_PROXY
         value: "1" # Render puts one proxy in front of every web service
       - key: DATABASE_URL
-        fromDatabase:
-          name: turfsync-db
-          property: connectionString
+        sync: false # set by hand to the Neon connection string — see the note above
       - key: REDIS_URL
         fromService:
           type: keyvalue
@@ -83,9 +83,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
-        fromDatabase:
-          name: turfsync-db
-          property: connectionString
+        sync: false # same Neon connection string as turfsync-api, by hand
       - key: REDIS_URL
         fromService:
           type: keyvalue
