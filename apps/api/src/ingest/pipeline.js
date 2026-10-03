@@ -90,7 +90,7 @@ export async function ingestPayload({
     if (echo) {
       await client.query(
         `update notification_logs
-            set parse_status = 'echo_suppressed', parsed_json = $2, latency_ms = $3
+            set parse_status = 'echo_suppressed', parse_error = null, parsed_json = $2, latency_ms = $3
           where id = $1`,
         [logId, parsed, Date.now() - started],
       );
@@ -170,7 +170,7 @@ export async function ingestPayload({
 
     await client.query(
       `update notification_logs
-          set parse_status = $2, parsed_json = $3, template_version = $4,
+          set parse_status = $2, parse_error = null, parsed_json = $3, template_version = $4,
               booking_id = $5, platform = $6, latency_ms = $7
         where id = $1`,
       [logId, parseStatus, parsed, templateVersion, result.booking.id, parsed.platform, Date.now() - started],
@@ -445,8 +445,8 @@ async function finishCancellation(client, ctx) {
 
   await client.query(
     `update notification_logs
-        set parse_status = 'template', parsed_json = $2, booking_id = $3,
-            platform = $4, latency_ms = $5
+        set parse_status = 'template', parse_error = null, parsed_json = $2,
+            booking_id = $3, platform = $4, latency_ms = $5
       where id = $1`,
     [logId, parsed, bookingId, parsed.platform, Date.now() - started],
   );
