@@ -260,6 +260,11 @@ class NotificationListener : NotificationListenerService() {
         if (!config.isConfigured()) return
         try {
             val conn = URL("${config.apiUrl}/status.json").openConnection() as HttpURLConnection
+            // Scopes the bridge to this venue when it is served by the dashboard
+            // itself (apps/api/src/routes/blockStatus.js); the old standalone
+            // local-only bridge (apps/slot-sync-aws) never checked this header,
+            // so sending it does not break that setup either.
+            conn.setRequestProperty("X-Device-Token", config.deviceToken)
             conn.connectTimeout = 8000
             conn.readTimeout = 8000
             val json = try {

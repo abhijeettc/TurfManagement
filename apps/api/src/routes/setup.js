@@ -110,7 +110,24 @@ export default async function setupRoutes(app) {
           }
         : null,
       logs: recentLogs.rows,
+      autoBlockEnabled: venue.auto_block_enabled,
     };
+  });
+
+  /**
+   * The write-back kill switch (packages/db/migrations/003_blocking.sql).
+   * Deliberately not flippable from signup or onboarding — a venue earns this
+   * after running read-only long enough to trust its parse accuracy — so it
+   * lives here as its own explicit, owner-only, auditable action rather than
+   * a field on some larger settings form.
+   */
+  app.put('/api/setup/auto-block', async (request, reply) => {
+    const { venue } = await resolveVenue(request, 'setup:write');
+    const enabled = Boolean(request.body?.enabled);
+
+    await pool.query('update venues set auto_block_enabled = $2 where id = $1', [venue.id, enabled]);
+    request.log.info({ venueId: venue.id, enabled }, 'auto_block_enabled changed');
+    return { autoBlockEnabled: enabled };
   });
 
   /**

@@ -30,7 +30,7 @@ class DeviceConfig(context: Context) {
         private const val API_URL = "api_url"
         private const val DEVICE_TOKEN = "device_token"
         private const val TURFPRO_URL = "turfpro_url"
-        private const val DEFAULT_API_URL = "https://corrected-supply-composer-knock.trycloudflare.com"
+        private const val DEFAULT_API_URL = "https://turfmanagement-g24e.onrender.com"
         private const val DEFAULT_TURFPRO_URL = "https://turfpro-v6bm.onrender.com"
     }
 }
