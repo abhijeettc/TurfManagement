@@ -20,16 +20,83 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="On your computer or phone, sign in to TurfSync, open Setup and tap &quot;Pair new device&quot;. A code appears. Type it in below."
+            android:text="Two steps, in this order. The code in step 2 expires after ten minutes, so do step 1 first."
             android:textSize="14sp"
-            android:layout_marginBottom="20dp" />
+            android:layout_marginBottom="24dp" />
+
+        <!--
+          Notification access comes first on purpose. It is the slow step — on
+          MIUI it means finding this app in a long alphabetical list, and then
+          the Autostart screen below as well — while the pairing code is the
+          perishable one. Asking for the code first started a ten-minute clock
+          before the slow part had even begun.
+        -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Step 1 — let TurfSync read booking notifications"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="2dp" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Pairing code"
-            android:textSize="12sp"
-            android:layout_marginBottom="4dp" />
+            android:text="Bookings arrive as WhatsApp messages. Without this, nothing is ever captured."
+            android:textSize="13sp"
+            android:layout_marginBottom="10dp" />
+
+        <Button
+            android:id="@+id/grantAccessButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Grant notification access" />
+
+        <TextView
+            android:id="@+id/accessStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="13sp"
+            android:paddingTop="8dp" />
+
+        <TextView
+            android:id="@+id/miuiFixLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="On Xiaomi, Redmi and POCO phones one more switch is needed, or MIUI silently stops TurfSync from running and no booking is ever captured."
+            android:textSize="13sp"
+            android:paddingTop="10dp"
+            android:layout_marginBottom="8dp"
+            android:visibility="gone" />
+
+        <Button
+            android:id="@+id/miuiFixButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Allow autostart (MIUI)"
+            android:visibility="gone" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="?android:attr/listDivider"
+            android:layout_marginTop="26dp"
+            android:layout_marginBottom="26dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Step 2 — enter the pairing code"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="2dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="On your computer or phone, sign in to TurfSync, open Setup and tap &quot;Pair new device&quot;."
+            android:textSize="13sp"
+            android:layout_marginBottom="10dp" />
 
         <EditText
             android:id="@+id/codeInput"
@@ -38,22 +105,28 @@
             android:inputType="number"
             android:digits="0123456789 "
             android:maxLength="11"
-            android:textSize="26sp"
+            android:textSize="24sp"
             android:hint="8 digits"
-            android:layout_marginBottom="20dp" />
+            android:layout_marginBottom="22dp" />
+
+        <Button
+            android:id="@+id/saveButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Pair this device" />
 
         <!--
           The address is correct out of the box and a venue owner has no reason
           to think about it; it stays reachable for a self-hosted server or a
-          staging build, just not in the way of the one field that matters.
+          staging build, just not in the way of the two steps that matter.
         -->
         <TextView
             android:id="@+id/advancedToggle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Advanced settings"
-            android:textSize="12sp"
-            android:paddingTop="4dp"
+            android:text="▸ Advanced settings"
+            android:textSize="13sp"
+            android:paddingTop="28dp"
             android:paddingBottom="8dp" />
 
         <TextView
@@ -72,43 +145,6 @@
             android:inputType="textUri"
             android:hint="https://your-turfsync-server"
             android:layout_marginBottom="16dp"
-            android:visibility="gone" />
-
-        <Button
-            android:id="@+id/grantAccessButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Grant notification access"
-            android:layout_marginBottom="10dp" />
-
-        <TextView
-            android:id="@+id/accessStatus"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textSize="12sp"
-            android:layout_marginBottom="20dp" />
-
-        <Button
-            android:id="@+id/saveButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Save and continue"
-            android:layout_marginBottom="20dp" />
-
-        <TextView
-            android:id="@+id/miuiFixLabel"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Xiaomi/Redmi/POCO phones silently block this listener from ever running, even after access is granted above — MIUI's own Autostart list has to allow it too, or no booking will ever be captured."
-            android:textSize="12sp"
-            android:layout_marginBottom="10dp"
-            android:visibility="gone" />
-
-        <Button
-            android:id="@+id/miuiFixButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Fix background restrictions (MIUI)"
             android:visibility="gone" />
 
     </LinearLayout>

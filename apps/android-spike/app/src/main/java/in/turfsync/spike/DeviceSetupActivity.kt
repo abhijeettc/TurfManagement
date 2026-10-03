@@ -39,12 +39,14 @@ class DeviceSetupActivity : AppCompatActivity() {
 
         apiUrlInput.setText(config.apiUrl)
 
-        findViewById<TextView>(R.id.advancedToggle).setOnClickListener {
+        val advanced = findViewById<TextView>(R.id.advancedToggle)
+        advanced.setOnClickListener {
             val label = findViewById<TextView>(R.id.apiUrlLabel)
             val shown = apiUrlInput.visibility == android.view.View.VISIBLE
             val next = if (shown) android.view.View.GONE else android.view.View.VISIBLE
             label.visibility = next
             apiUrlInput.visibility = next
+            advanced.text = if (shown) "▸ Advanced settings" else "▾ Advanced settings"
         }
 
         findViewById<Button>(R.id.grantAccessButton).setOnClickListener {
@@ -94,7 +96,7 @@ class DeviceSetupActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
             if (!isNotificationAccessGranted()) {
-                Toast.makeText(this, "Grant notification access first — otherwise nothing will ever be captured.", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "Finish step 1 first — without notification access no booking is ever captured.", Toast.LENGTH_LONG).show()
                 return@setOnClickListener
             }
 
@@ -105,7 +107,7 @@ class DeviceSetupActivity : AppCompatActivity() {
                 Handler(Looper.getMainLooper()).post {
                     if (token == null) {
                         button.isEnabled = true
-                        button.text = "Save and continue"
+                        button.text = "Pair this device"
                         Toast.makeText(this, error ?: "Could not pair this device.", Toast.LENGTH_LONG).show()
                         return@post
                     }
