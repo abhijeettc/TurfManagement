@@ -2,7 +2,6 @@ package `in`.turfsync.spike
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -42,8 +41,8 @@ class TurfProRunner(
     @SuppressLint("SetJavaScriptEnabled")
     fun start() {
         handler.post {
-            val host = Uri.parse(DeviceConfig(appContext).apiUrl).host
-            if (host == null) {
+            val base = DeviceConfig(appContext).turfProUrl
+            if (base.isBlank()) {
                 finish(Result.FAILED)
                 return@post
             }
@@ -53,7 +52,7 @@ class TurfProRunner(
             view.webViewClient = WebViewClient()
             webView = view
             startedAt = System.currentTimeMillis()
-            view.loadUrl("http://$host/admin/grounds")
+            view.loadUrl("$base/admin/grounds")
             handler.postDelayed(poll, POLL_MS)
         }
     }

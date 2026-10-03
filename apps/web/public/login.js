@@ -72,6 +72,37 @@
       });
   });
 
+  // Development quick sign-in. The server only offers it when it is switched on
+  // (and never in production); clicking the label fills the form so it is clear
+  // who is being signed in, then the server opens the session itself.
+  fetch('/auth/dev-login-options')
+    .then(function (r) { return r.ok ? r.json() : { enabled: false }; })
+    .then(function (o) {
+      if (!o.enabled) return;
+      $('quickAdmin').textContent = o.label;
+      $('quick').hidden = false;
+      $('quickAdmin').addEventListener('click', function () {
+        setMode('login');
+        $('email').value = o.email;
+        $('password').value = '••••••••';
+        $('submit').disabled = true;
+        fetch('/auth/dev-login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' })
+          .then(function (r) {
+            return r.json().catch(function () { return {}; }).then(function (d) {
+              if (!r.ok) throw new Error(d.error || 'Quick sign-in failed.');
+              return d;
+            });
+          })
+          .then(function () { window.location.href = '/'; })
+          .catch(function (err) {
+            $('password').value = '';
+            fail(err.message);
+            $('submit').disabled = false;
+          });
+      });
+    })
+    .catch(function () {});
+
   // Already signed in? Skip the form.
   fetch('/auth/me')
     .then(function (r) { return r.ok ? r.json() : null; })

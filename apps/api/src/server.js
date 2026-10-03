@@ -9,6 +9,7 @@ import { pool, close } from '@turfsync/db';
 import { bus } from './bus.js';
 import { requireVenue } from './auth/guard.js';
 import { startWatchdog } from './watchdog.js';
+import { applySecurity } from './security/index.js';
 import authRoutes from './routes/auth.js';
 import ingestRoutes from './routes/ingest.js';
 import boardRoutes from './routes/board.js';
@@ -24,7 +25,19 @@ const WEB_ROOT = path.resolve(here, '..', '..', 'web', 'public');
 const app = Fastify({
   logger: { level: process.env.LOG_LEVEL || 'info' },
   bodyLimit: 2 * 1024 * 1024,
+  // Behind a load balancer every request otherwise arrives from the proxy's
+  // address, which makes per-IP limits and session records meaningless. Set
+  // TRUST_PROXY to a hop count (1) or `true`; leave unset when exposed directly.
+  trustProxy: parseTrustProxy(process.env.TRUST_PROXY),
 });
+
+function parseTrustProxy(value) {
+  if (!value) return false;
+  if (value === 'true') return true;
+  return /^\d+$/.test(value) ? Number(value) : value;
+}
+
+applySecurity(app);
 
 // A POST with `content-type: application/json` and no body is rejected by the
 // default parser with FST_ERR_CTP_EMPTY_JSON_BODY. Logout, heartbeat and any

@@ -24,15 +24,14 @@ object PlatformApps {
     fun packageFor(platform: String): String? = PACKAGES[platform.lowercase()]
 
     /**
-     * TurfPro is a web app, not an Android package: its owner panel is served
-     * by the same machine as the TurfSync server (port 80), so open that
-     * address — the host taken from the configured server address — in the
-     * browser. Still only a launch; nothing is done inside it.
+     * TurfPro is a web app, not an Android package, hosted at whatever address
+     * DeviceConfig.turfProUrl names — not necessarily the same host as the
+     * TurfSync server. It opens inside TurfSync (not the browser) so the
+     * session TurfSync's automatic blocking uses is the one the owner signs in
+     * to here. Still only a launch; nothing is done inside it.
      */
     private fun openTurfPro(context: Context): Boolean {
-        // TurfPro opens inside TurfSync (not the browser) so the session TurfSync's
-        // automatic blocking uses is the one the owner signs in to here.
-        if (Uri.parse(DeviceConfig(context).apiUrl).host == null) return false
+        if (DeviceConfig(context).turfProUrl.isBlank()) return false
         context.startActivity(Intent(context, TurfProLoginActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         return true
     }

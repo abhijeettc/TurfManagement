@@ -4,6 +4,7 @@ import { normalizePhone } from '@turfsync/core';
 import { hashPassword, verifyPassword } from '../auth/passwords.js';
 import { createSession, revokeSession, cookieOptions, COOKIE } from '../auth/sessions.js';
 import { requireAuth, venuesFor } from '../auth/guard.js';
+import { loginFailures } from '../security/rateLimit.js';
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
@@ -83,6 +84,17 @@ export default async function authRoutes(app) {
     const { email, password } = request.body ?? {};
     const normalised = String(email ?? '').trim().toLowerCase();
 
+    // Refuse before the scrypt work, not after: a throttle that still pays
+    // ~100ms of CPU per rejected guess is a throttle in name only.
+    const throttleKey = `${request.ip}|${normalised}`;
+    const gate = loginFailures.peek(throttleKey);
+    if (!gate.allowed) {
+      return reply
+        .header('retry-after', String(gate.retryAfterSec))
+        .code(429)
+        .send({ error: 'Too many sign-in attempts. Please wait a few minutes and try again.' });
+    }
+
     const { rows } = await pool.query('select * from accounts where email = $1', [normalised]);
     const account = rows[0];
 
@@ -94,9 +106,11 @@ export default async function authRoutes(app) {
     );
 
     if (!account || !ok || account.status !== 'active') {
+      loginFailures.consume(throttleKey);
       return reply.code(401).send({ error: 'That email and password do not match.' });
     }
 
+    loginFailures.reset(throttleKey);
     const { token } = await createSession(account.id, {
       userAgent: request.headers['user-agent'],
       ip: request.ip,
@@ -104,6 +118,42 @@ export default async function authRoutes(app) {
 
     reply.setCookie(COOKIE, token, cookieOptions());
     return { account: { id: account.id, email: account.email, name: account.name } };
+  });
+
+  /**
+   * Development shortcut: a labelled one-click sign-in on the login screen.
+   *
+   * Off unless DEV_QUICK_LOGIN_EMAIL names an existing account, and hard-off in
+   * production whatever the variable says. The password never reaches the
+   * page — the server opens the session itself — so the login screen carries
+   * no credential, only the label and the email it will fill in.
+   */
+  const quickLoginEmail = () =>
+    process.env.NODE_ENV === 'production'
+      ? null
+      : (process.env.DEV_QUICK_LOGIN_EMAIL || '').trim().toLowerCase() || null;
+
+  app.get('/auth/dev-login-options', async () => {
+    const email = quickLoginEmail();
+    return email ? { enabled: true, label: 'Admin', email } : { enabled: false };
+  });
+
+  app.post('/auth/dev-login', async (request, reply) => {
+    const email = quickLoginEmail();
+    if (!email) return reply.code(404).send({ error: 'Not found.' });
+
+    const { rows } = await pool.query('select * from accounts where email = $1', [email]);
+    const account = rows[0];
+    if (!account || account.status !== 'active') {
+      return reply.code(404).send({ error: 'The quick-login account does not exist.' });
+    }
+
+    const { token } = await createSession(account.id, {
+      userAgent: request.headers['user-agent'],
+      ip: request.ip,
+    });
+    reply.setCookie(COOKIE, token, cookieOptions());
+    return { account: { id: account.id, email: account.email, name: account.name }, next: 'board' };
   });
 
   app.post('/auth/logout', async (request, reply) => {

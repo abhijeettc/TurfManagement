@@ -26,8 +26,8 @@ private class PlatformAppBridge(private val activity: MainActivity) {
     @JavascriptInterface
     fun sessionStatus(platform: String): String {
         if (!platform.equals("turfpro", ignoreCase = true)) return "out"
-        val host = android.net.Uri.parse(DeviceConfig(activity).apiUrl).host ?: return "out"
-        val cookies = android.webkit.CookieManager.getInstance().getCookie("http://$host/") ?: return "out"
+        val base = DeviceConfig(activity).turfProUrl.ifBlank { return "out" }
+        val cookies = android.webkit.CookieManager.getInstance().getCookie("$base/") ?: return "out"
         return if (cookies.split(';').any { it.trim().startsWith("turfbook_token=") }) "in" else "out"
     }
 

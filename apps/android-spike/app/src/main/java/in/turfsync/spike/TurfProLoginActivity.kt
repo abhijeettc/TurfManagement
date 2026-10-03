@@ -27,8 +27,8 @@ class TurfProLoginActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         title = "TurfPro sign-in"
 
-        val host = Uri.parse(DeviceConfig(this).apiUrl).host
-        if (host == null) {
+        val base = DeviceConfig(this).turfProUrl
+        if (base.isBlank()) {
             finish()
             return
         }
@@ -40,7 +40,7 @@ class TurfProLoginActivity : AppCompatActivity() {
             webViewClient = WebViewClient()
         }
         setContentView(webView)
-        webView.loadUrl("http://$host/admin/login")
+        webView.loadUrl("$base/admin/login")
 
         if (intent.getBooleanExtra(EXTRA_FINISH_ON_LOGIN, false)) {
             val check = object : Runnable {

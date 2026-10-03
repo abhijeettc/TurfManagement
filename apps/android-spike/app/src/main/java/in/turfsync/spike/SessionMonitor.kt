@@ -1,7 +1,6 @@
 package `in`.turfsync.spike
 
 import android.content.Context
-import android.net.Uri
 import android.webkit.CookieManager
 import java.net.HttpURLConnection
 import java.net.URL
@@ -20,11 +19,11 @@ object SessionMonitor {
 
     private const val COOKIE_NAME = "turfbook_token"
 
-    private fun host(context: Context): String? = Uri.parse(DeviceConfig(context).apiUrl).host
+    private fun base(context: Context): String? = DeviceConfig(context).turfProUrl.ifBlank { null }
 
     private fun tokenCookie(context: Context): String? {
-        val host = host(context) ?: return null
-        val all = CookieManager.getInstance().getCookie("http://$host/") ?: return null
+        val base = base(context) ?: return null
+        val all = CookieManager.getInstance().getCookie("$base/") ?: return null
         return all.split(';').map { it.trim() }.firstOrNull { it.startsWith("$COOKIE_NAME=") }
     }
 
@@ -34,9 +33,9 @@ object SessionMonitor {
 
     /** Drops a login cookie TurfPro no longer accepts. */
     fun clear(context: Context) {
-        val host = host(context) ?: return
+        val base = base(context) ?: return
         val manager = CookieManager.getInstance()
-        manager.setCookie("http://$host/", "$COOKIE_NAME=; Max-Age=0; Path=/")
+        manager.setCookie("$base/", "$COOKIE_NAME=; Max-Age=0; Path=/")
         manager.flush()
     }
 
@@ -44,9 +43,9 @@ object SessionMonitor {
     fun check(context: Context, platform: String): State {
         if (!platform.equals("turfpro", ignoreCase = true)) return State.OUT
         val cookie = tokenCookie(context) ?: return State.OUT
-        val host = host(context) ?: return State.UNKNOWN
+        val base = base(context) ?: return State.UNKNOWN
         return try {
-            val conn = URL("http://$host/api/auth/me").openConnection() as HttpURLConnection
+            val conn = URL("$base/api/auth/me").openConnection() as HttpURLConnection
             conn.setRequestProperty("Cookie", cookie)
             conn.connectTimeout = 6000
             conn.readTimeout = 6000
