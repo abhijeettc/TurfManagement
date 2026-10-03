@@ -17,6 +17,21 @@ import { notifyOwner } from '../ownerPhone.js';
 import { enqueueBlock, enqueueUnblock } from '../blocking/queue.js';
 
 /**
+ * A WhatsApp provider being slow, misconfigured or down must never be the
+ * reason a real booking fails to save — this call sits inside the same
+ * transaction as the insert, and an uncaught throw here rolls that back too.
+ * Logged and swallowed: the booking is the thing that matters; the alert is
+ * best-effort.
+ */
+async function safeNotify(client, venueId, template, vars) {
+  try {
+    await notifyOwner(client, venueId, template, vars);
+  } catch (error) {
+    console.error(`notifyOwner(${template}) failed — booking proceeds regardless:`, error.message);
+  }
+}
+
+/**
  * ingest → echo check → parse → map → persist → conflict check → enqueue
  * blocks → notify
  *
@@ -186,14 +201,14 @@ export async function ingestPayload({
 
     if (result.outcome === 'conflict') {
       emitBoardChange(venueId, { type: 'conflict', businessDate, conflictId: result.conflictId });
-      await notifyOwner(client, venueId, 'conflict_alert', {
+      await safeNotify(client, venueId, 'conflict_alert', {
         court: court.name,
         slot: slotLabel,
         platforms: result.platforms.map((p) => PLATFORM_LABELS[p]),
       });
     } else if (result.outcome === 'created') {
       emitBoardChange(venueId, { type: 'booking', businessDate, bookingId: result.booking.id });
-      await notifyOwner(client, venueId, 'booking_alert', {
+      await safeNotify(client, venueId, 'booking_alert', {
         platform: PLATFORM_LABELS[parsed.platform],
         customer: parsed.customerName,
         court: court.name,
