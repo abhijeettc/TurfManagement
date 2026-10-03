@@ -16,8 +16,8 @@ android {
         // Bump versionCode on every build handed to someone else: Android refuses
         // to install over a same-or-higher code, which reads as "App not installed"
         // with no further explanation on the tester's phone.
-        versionCode = 3
-        versionName = "0.2-beta"
+        versionCode = 4
+        versionName = "0.3-beta"
     }
 
     buildTypes {
