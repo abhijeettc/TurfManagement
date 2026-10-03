@@ -18,6 +18,7 @@ import moneyRoutes from './routes/money.js';
 import setupRoutes from './routes/setup.js';
 import syncRoutes from './routes/sync.js';
 import credentialRoutes from './routes/credentials.js';
+import blockStatusRoutes from './routes/blockStatus.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const WEB_ROOT = path.resolve(here, '..', '..', 'web', 'public');
@@ -100,6 +101,7 @@ await app.register(moneyRoutes);
 await app.register(setupRoutes);
 await app.register(syncRoutes);
 await app.register(credentialRoutes);
+await app.register(blockStatusRoutes);
 
 app.get('/health', async () => {
   const { rows } = await pool.query('select 1 as ok');

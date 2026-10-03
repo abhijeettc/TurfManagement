@@ -157,9 +157,11 @@ class TurfProRunner(
         fun report(context: Context, path: String, taskId: String, outcome: String? = null, detail: String? = null) {
             Thread {
                 try {
-                    val conn = URL("${DeviceConfig(context).apiUrl}/status/$path").openConnection() as HttpURLConnection
+                    val config = DeviceConfig(context)
+                    val conn = URL("${config.apiUrl}/status/$path").openConnection() as HttpURLConnection
                     conn.requestMethod = "POST"
                     conn.setRequestProperty("Content-Type", "application/json")
+                    conn.setRequestProperty("X-Device-Token", config.deviceToken)
                     conn.doOutput = true
                     conn.connectTimeout = 8000
                     conn.readTimeout = 8000
