@@ -1,0 +1,96 @@
+# Render Blueprint for TurfSync.
+#
+# This deploys only `apps/api` (the Fastify dashboard) and its block-job
+# worker — the Phase 1/3 read-only-board-plus-assisted-blocking system.
+# `apps/slot-sync-aws` is a separate, AWS-shaped system (Lambda + DynamoDB)
+# and is not covered here; it does not fit a Render web-service model as-is.
+#
+# To use: on Render, New -> Blueprint -> connect this repo -> pick the
+# branch that has this file. Render will show a plan it has derived from
+# this file for you to review before creating anything — nothing is
+# provisioned until you approve that plan.
+#
+# After the first deploy, GUPSHUP_* and ANTHROPIC_API_KEY (both optional —
+# see apps/api/src/notify.js and .env.example) are left for you to fill in
+# by hand in the dashboard; they are marked `sync: false` below so no
+# placeholder value ends up in git.
+#
+# DATABASE_URL is `sync: false` too, deliberately, rather than a `databases:`
+# block wiring up Render's own managed Postgres: this deployment uses a Neon
+# Postgres instance instead. A real connection string (user, password, host)
+# belongs in the Render dashboard, never in this file — render.yaml is
+# committed to git, unlike .env, and anyone who can read the repo can read
+# this file. Set DATABASE_URL by hand on both turfsync-api and
+# turfsync-block-worker to the Neon connection string after the first deploy.
+
+services:
+  - type: keyvalue
+    name: turfsync-redis
+    plan: free
+    region: singapore
+    ipAllowList: [] # private network only — nothing but Render services reach this
+
+  - type: web
+    name: turfsync-api
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: npm install
+    # Migrate on every deploy, then serve. Safe to repeat — migrate() only
+    # applies what is not already applied (packages/db/src/migrate.js).
+    startCommand: npm run migrate && npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: TRUST_PROXY
+        value: "1" # Render puts one proxy in front of every web service
+      - key: DATABASE_URL
+        sync: false # set by hand to the Neon connection string — see the note above
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: turfsync-redis
+          property: connectionString
+      - key: SESSION_ENCRYPTION_KEY
+        generateValue: true # Render mints a random 32+ char value, stored only in its dashboard
+      - key: PARSER_FALLBACK_MODEL
+        value: claude-haiku-4-5
+      - key: ANTHROPIC_API_KEY
+        sync: false # optional — set this in the dashboard to enable AI-fallback parsing
+      - key: WHATSAPP_PROVIDER
+        sync: false # optional — unset/'console' logs alerts instead of sending them
+      - key: GUPSHUP_API_KEY
+        sync: false
+      - key: GUPSHUP_SOURCE_NUMBER
+        sync: false
+      - key: GUPSHUP_APP_NAME
+        sync: false
+      - key: GUPSHUP_TEMPLATE_IDS
+        sync: false
+      # DEV_QUICK_LOGIN_EMAIL is deliberately absent: apps/api/src/routes/auth.js
+      # already hard-disables it when NODE_ENV=production, and it must never be
+      # set here regardless.
+
+  - type: worker
+    name: turfsync-block-worker
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: npm install
+    startCommand: npm run worker
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false # same Neon connection string as turfsync-api, by hand
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: turfsync-redis
+          property: connectionString
+      - key: SESSION_ENCRYPTION_KEY
+        fromService:
+          type: web
+          name: turfsync-api
+          envVarKey: SESSION_ENCRYPTION_KEY
