@@ -139,10 +139,15 @@ async function sendViaGupshup(to, template, vars) {
     template: JSON.stringify({ id: templateId, params }),
   });
 
+  // No timeout here left every caller (ingest, the block worker, the
+  // watchdog) hostage to Gupshup's own latency — a slow or unreachable API
+  // could hang a booking's whole request indefinitely. 8s matches the
+  // Android app's own HTTP timeouts.
   const res = await fetch('https://api.gupshup.io/wa/api/v1/template/msg', {
     method: 'POST',
     headers: { apikey: apiKey, 'Content-Type': 'application/x-www-form-urlencoded' },
     body,
+    signal: AbortSignal.timeout(8_000),
   });
 
   const raw = await res.json().catch(() => null);
